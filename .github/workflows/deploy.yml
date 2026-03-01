@@ -1,12 +1,14 @@
 name: Deploy to GCP
 
 on:
+  workflow_dispatch:
   push:
     branches: [main]
   workflow_dispatch:
     inputs:
       environment:
-        description: 'Target environment'
+        description:
+  workflow_dispatch: 'Target environment'
         required: true
         default: 'production'
         type: choice
@@ -28,16 +30,19 @@ env:
 jobs:
   validate:
     name: 🔍 Validate
-    runs-on: ubuntu-latest
+    runs-on:
+  workflow_dispatch: ubuntu-latest
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
         with:
-          version: 10
+          version:
+  workflow_dispatch: 10
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version:
+  workflow_dispatch: 20
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec prisma generate
@@ -49,7 +54,8 @@ jobs:
   build-push:
     name: 🐳 Build & Push
     needs: validate
-    runs-on: ubuntu-latest
+    runs-on:
+  workflow_dispatch: ubuntu-latest
     timeout-minutes: 15
     permissions:
       contents: read
@@ -78,7 +84,8 @@ jobs:
   deploy:
     name: 🚀 Deploy to Cloud Run
     needs: build-push
-    runs-on: ubuntu-latest
+    runs-on:
+  workflow_dispatch: ubuntu-latest
     timeout-minutes: 10
     permissions:
       contents: read
