@@ -1,0 +1,224 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Operator {
+  id            String    @id @default(cuid())
+  name          String
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Auth
+  accounts      Account[]
+  sessions      Session[]
+
+  // Marketplace
+  jobs               Job[]
+  bots               Bot[]
+  creditBalance      Float              @default(0)
+  creditTransactions CreditTransaction[]
+  ledgerEntries      Ledger[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user Operator @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         Operator @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Bot {
+  id            String   @id @default(cuid())
+  name          String
+  description   String?
+  apiKey        String   @unique @default(cuid())
+  operatorId    String
+  operator      Operator @relation(fields: [operatorId], references: [id])
+
+  category      String[]
+  rating        Float    @default(0)
+  jobsCompleted Int      @default(0)
+  totalEarned   Float    @default(0)
+  isActive      Boolean  @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  bids          Bid[]
+  submissions   Submission[]
+  ratings       Rating[]
+  ledgerEntries Ledger[]
+}
+
+model Job {
+  id          String    @id @default(cuid())
+  title       String
+  description String    @db.Text
+  category    String
+  budget      Float
+  deadline    DateTime
+  status      JobStatus @default(OPEN)
+
+  operatorId String
+  operator   Operator @relation(fields: [operatorId], references: [id])
+
+  bids        Bid[]
+  submissions Submission[]
+  ratings     Rating[]
+
+  winningBidId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum JobStatus {
+  OPEN
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+model Bid {
+  id      String    @id @default(cuid())
+  amount  Float
+  message String?   @db.Text
+  status  BidStatus @default(PENDING)
+
+  jobId String
+  job   Job    @relation(fields: [jobId], references: [id])
+  botId String
+  bot   Bot    @relation(fields: [botId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([jobId, botId])
+}
+
+enum BidStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+model Submission {
+  id         String           @id @default(cuid())
+  content    String           @db.Text
+  fileUrls   String[]
+  status     SubmissionStatus @default(PENDING)
+  qaScore    Float?
+  qaFeedback String?          @db.Text
+
+  jobId String
+  job   Job    @relation(fields: [jobId], references: [id])
+  botId String
+  bot   Bot    @relation(fields: [botId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum SubmissionStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  REVISION_REQUESTED
+}
+
+model Ledger {
+  id          String     @id @default(cuid())
+  type        LedgerType
+  amount      Float
+  description String
+
+  operatorId String?
+  operator   Operator? @relation(fields: [operatorId], references: [id])
+  botId      String?
+  bot        Bot?      @relation(fields: [botId], references: [id])
+
+  jobId        String?
+  submissionId String?
+
+  createdAt DateTime @default(now())
+}
+
+enum LedgerType {
+  CREDIT_PURCHASE
+  JOB_PAYMENT
+  BOT_EARNING
+  PLATFORM_FEE
+  REFUND
+  PAYOUT
+}
+
+model Rating {
+  id      String  @id @default(cuid())
+  score   Float
+  comment String? @db.Text
+
+  jobId String
+  job   Job    @relation(fields: [jobId], references: [id])
+  botId String
+  bot   Bot    @relation(fields: [botId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@unique([jobId, botId])
+}
+
+model CreditTransaction {
+  id              String     @id @default(cuid())
+  amount          Float
+  type            CreditType
+  description     String
+  stripePaymentId String?
+
+  operatorId String
+  operator   Operator @relation(fields: [operatorId], references: [id])
+
+  createdAt DateTime @default(now())
+}
+
+enum CreditType {
+  PURCHASE
+  SPEND
+  REFUND
+  BONUS
+}

@@ -1,0 +1,82 @@
+import { auth, signOut } from "@/lib/auth";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { formatCurrency } from "@/lib/utils";
+import { db } from "@/lib/db";
+import { LogOut, User } from "lucide-react";
+
+async function getUserCredits(userId: string): Promise<number> {
+  const operator = await db.operator.findUnique({
+    where: { id: userId },
+    select: { creditBalance: true },
+  });
+  return operator?.creditBalance ?? 0;
+}
+
+export async function Navbar() {
+  const session = await auth();
+  if (!session?.user) return null;
+
+  const credits = await getUserCredits(session.user.id);
+  const initials = session.user.name
+    ?.split(" ")
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2) ?? "U";
+
+  return (
+    <header className="h-14 border-b border-border/50 bg-card/30 flex items-center justify-between px-6">
+      <div className="text-sm text-muted-foreground">
+        <span className="text-foreground font-medium font-mono">
+          {formatCurrency(credits)}
+        </span>{" "}
+        credits
+      </div>
+
+      <DropdownMenu>
+        <DropdownMenuTrigger className="flex items-center gap-2 hover:opacity-80 transition-opacity focus:outline-none">
+          <span className="text-sm text-muted-foreground hidden sm:block">
+            {session.user.name}
+          </span>
+          <Avatar className="h-8 w-8">
+            <AvatarImage
+              src={session.user.image ?? undefined}
+              alt={session.user.name ?? "User"}
+            />
+            <AvatarFallback className="text-xs">{initials}</AvatarFallback>
+          </Avatar>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-48">
+          <DropdownMenuItem className="text-sm text-muted-foreground" disabled>
+            <User className="h-4 w-4 mr-2" />
+            {session.user.email}
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem asChild>
+            <form
+              action={async () => {
+                "use server";
+                await signOut({ redirectTo: "/" });
+              }}
+            >
+              <button
+                type="submit"
+                className="flex items-center gap-2 w-full text-sm cursor-pointer"
+              >
+                <LogOut className="h-4 w-4" />
+                Sign out
+              </button>
+            </form>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </header>
+  );
+}
