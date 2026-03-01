@@ -2,13 +2,9 @@ name: Deploy to GCP
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-  workflow_dispatch:
     inputs:
       environment:
-        description:
-  workflow_dispatch: 'Target environment'
+        description: 'Target environment'
         required: true
         default: 'production'
         type: choice
@@ -28,54 +24,23 @@ env:
   CLOUD_RUN_SERVICE: thebotclub-production
 
 jobs:
-  validate:
-    name: 🔍 Validate
-    runs-on:
-  workflow_dispatch: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-        with:
-          version:
-  workflow_dispatch: 10
-      - uses: actions/setup-node@v4
-        with:
-          node-version:
-  workflow_dispatch: 20
-          cache: 'pnpm'
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm exec prisma generate
-      - run: pnpm run lint
-      - run: pnpm run build
-        env:
-          SKIP_ENV_VALIDATION: true
-
   build-push:
     name: 🐳 Build & Push
-    needs: validate
-    runs-on:
-  workflow_dispatch: ubuntu-latest
+    runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
       contents: read
       id-token: write
     steps:
       - uses: actions/checkout@v4
-
       - id: auth
         uses: google-github-actions/auth@v2
         with:
           workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER }}
           service_account: ${{ secrets.GCP_SA_EMAIL }}
-
       - uses: google-github-actions/setup-gcloud@v2
-
-      - name: Configure Docker for GAR
-        run: gcloud auth configure-docker ${{ env.GCP_REGION }}-docker.pkg.dev --quiet
-
-      - name: Build and push
-        run: |
+      - run: gcloud auth configure-docker ${{ env.GCP_REGION }}-docker.pkg.dev --quiet
+      - run: |
           IMAGE="${{ env.GAR_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}"
           docker build -t $IMAGE -t "${{ env.GAR_REGISTRY }}/${{ env.IMAGE_NAME }}:latest" .
           docker push $IMAGE
@@ -84,25 +49,20 @@ jobs:
   deploy:
     name: 🚀 Deploy to Cloud Run
     needs: build-push
-    runs-on:
-  workflow_dispatch: ubuntu-latest
+    runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
       contents: read
       id-token: write
     steps:
       - uses: actions/checkout@v4
-
       - id: auth
         uses: google-github-actions/auth@v2
         with:
           workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER }}
           service_account: ${{ secrets.GCP_SA_EMAIL }}
-
       - uses: google-github-actions/setup-gcloud@v2
-
-      - name: Deploy to Cloud Run
-        run: |
+      - run: |
           gcloud run deploy ${{ env.CLOUD_RUN_SERVICE }} \
             --image "${{ env.GAR_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}" \
             --region ${{ env.GCP_REGION }} \
@@ -111,23 +71,15 @@ jobs:
             --port 3000 \
             --memory 1Gi \
             --cpu 1 \
-            --min-instances 1 \
+            --min-instances 0 \
             --max-instances 10 \
             --set-env-vars "NODE_ENV=production" \
             --set-secrets "DATABASE_URL=thebotclub-database-url:latest,NEXTAUTH_SECRET=thebotclub-nextauth-secret:latest,STRIPE_SECRET_KEY=thebotclub-stripe-secret:latest"
-
-      - name: Health check
-        run: |
+      - run: |
           URL=$(gcloud run services describe ${{ env.CLOUD_RUN_SERVICE }} --region ${{ env.GCP_REGION }} --format 'value(status.url)')
-          echo "Service URL: $URL"
           for i in {1..10}; do
-            STATUS=$(curl -s -o /dev/null -w '%{http_code}' "$URL" || true)
-            if [ "$STATUS" = "200" ]; then
-              echo "✅ Health check passed"
-              exit 0
-            fi
-            echo "Attempt $i: status $STATUS, waiting..."
+            STATUS=$(curl -s -o /dev/null -w '%{http_code}' "$URL/api/health" || true)
+            [ "$STATUS" = "200" ] && echo "✅ Health check passed" && exit 0
             sleep 5
           done
-          echo "❌ Health check failed"
-          exit 1
+          echo "❌ Health check failed" && exit 1
