@@ -23,7 +23,10 @@ model Operator {
   // Marketplace
   jobs               Job[]
   bots               Bot[]
-  creditBalance      Float              @default(0)
+  // TODO: Add CHECK constraint (creditBalance >= 0) via a migration after
+  // Prisma adds native CHECK support, or via raw SQL: ALTER TABLE "Operator"
+  // ADD CONSTRAINT "Operator_creditBalance_check" CHECK ("creditBalance" >= 0);
+  creditBalance      Decimal            @default(0) @db.Decimal(12, 2)
   creditTransactions CreditTransaction[]
   ledgerEntries      Ledger[]
 }
@@ -45,6 +48,7 @@ model Account {
   user Operator @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
+  @@index([userId])
 }
 
 model Session {
@@ -53,6 +57,8 @@ model Session {
   userId       String
   expires      DateTime
   user         Operator @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model VerificationToken {
@@ -67,14 +73,14 @@ model Bot {
   id            String   @id @default(cuid())
   name          String
   description   String?
-  apiKey        String   @unique @default(cuid())
+  apiKey        String   @unique
   operatorId    String
   operator      Operator @relation(fields: [operatorId], references: [id])
 
   category      String[]
   rating        Float    @default(0)
   jobsCompleted Int      @default(0)
-  totalEarned   Float    @default(0)
+  totalEarned   Decimal  @default(0) @db.Decimal(12, 2)
   isActive      Boolean  @default(true)
 
   createdAt DateTime @default(now())
@@ -84,6 +90,10 @@ model Bot {
   submissions   Submission[]
   ratings       Rating[]
   ledgerEntries Ledger[]
+
+  @@index([operatorId])
+  @@index([isActive])
+  @@index([rating])
 }
 
 model Job {
@@ -91,7 +101,7 @@ model Job {
   title       String
   description String    @db.Text
   category    String
-  budget      Float
+  budget      Decimal   @db.Decimal(12, 2)
   deadline    DateTime
   status      JobStatus @default(OPEN)
 
@@ -106,6 +116,11 @@ model Job {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([operatorId])
+  @@index([status])
+  @@index([category])
+  @@index([deadline])
 }
 
 enum JobStatus {
@@ -117,7 +132,7 @@ enum JobStatus {
 
 model Bid {
   id      String    @id @default(cuid())
-  amount  Float
+  amount  Decimal   @db.Decimal(12, 2)
   message String?   @db.Text
   status  BidStatus @default(PENDING)
 
@@ -130,6 +145,9 @@ model Bid {
   updatedAt DateTime @updatedAt
 
   @@unique([jobId, botId])
+  @@index([jobId])
+  @@index([botId])
+  @@index([status])
 }
 
 enum BidStatus {
@@ -153,6 +171,10 @@ model Submission {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([jobId])
+  @@index([botId])
+  @@index([status])
 }
 
 enum SubmissionStatus {
@@ -165,7 +187,7 @@ enum SubmissionStatus {
 model Ledger {
   id          String     @id @default(cuid())
   type        LedgerType
-  amount      Float
+  amount      Decimal    @db.Decimal(12, 2)
   description String
 
   operatorId String?
@@ -177,6 +199,10 @@ model Ledger {
   submissionId String?
 
   createdAt DateTime @default(now())
+
+  @@index([operatorId])
+  @@index([botId])
+  @@index([jobId])
 }
 
 enum LedgerType {
@@ -201,11 +227,12 @@ model Rating {
   createdAt DateTime @default(now())
 
   @@unique([jobId, botId])
+  @@index([botId])
 }
 
 model CreditTransaction {
   id              String     @id @default(cuid())
-  amount          Float
+  amount          Decimal    @db.Decimal(12, 2)
   type            CreditType
   description     String
   stripePaymentId String?
@@ -214,6 +241,8 @@ model CreditTransaction {
   operator   Operator @relation(fields: [operatorId], references: [id])
 
   createdAt DateTime @default(now())
+
+  @@index([operatorId])
 }
 
 enum CreditType {

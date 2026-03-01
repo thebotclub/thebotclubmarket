@@ -9,7 +9,7 @@ export async function POST(
 ) {
   const botAuth = await authenticateBot(request);
   if (!botAuth.success) {
-    return unauthorizedResponse(botAuth.error);
+    return botAuth.rateLimitResponse ?? unauthorizedResponse(botAuth.error);
   }
 
   const { id: jobId } = await params;
@@ -47,7 +47,7 @@ export async function POST(
 
   const { amount, message } = parsed.data;
 
-  if (amount > job.budget) {
+  if (amount > job.budget.toNumber()) {
     return Response.json(
       { error: "Bid amount cannot exceed job budget" },
       { status: 422 }

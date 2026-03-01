@@ -104,7 +104,10 @@ resource "google_secret_manager_secret" "database_url" {
 
 resource "google_secret_manager_secret_version" "database_url" {
   secret      = google_secret_manager_secret.database_url.id
-  secret_data = "postgresql://${var.database_username}:${var.database_password}@${google_sql_database_instance.postgres.private_ip_address}:5432/${google_sql_database.app_db.name}"
+  # Use Cloud SQL Unix socket connector (not private IP) so Cloud Run can reach
+  # the database without VPC peering. Cloud Run mounts the socket via the
+  # cloud_sql_instances volume below.
+  secret_data = "postgresql://${var.database_username}:${var.database_password}@localhost/${google_sql_database.app_db.name}?host=/cloudsql/${google_sql_database_instance.postgres.connection_name}"
 }
 
 # =============================================================================
@@ -198,6 +201,56 @@ resource "google_cloud_run_v2_service" "app" {
         name  = "AUTH_URL"
         value = var.custom_domain != "" ? "https://${var.custom_domain}" : "https://${local.app_name}-${var.gcp_project_id}.${var.gcp_region}.run.app"
       }
+
+      # M8: OAuth and payment secrets passed to Cloud Run
+      env {
+        name  = "GOOGLE_CLIENT_ID"
+        value = var.google_client_id
+      }
+
+      env {
+        name  = "GOOGLE_CLIENT_SECRET"
+        value = var.google_client_secret
+      }
+
+      env {
+        name  = "GITHUB_ID"
+        value = var.github_client_id
+      }
+
+      env {
+        name  = "GITHUB_SECRET"
+        value = var.github_client_secret
+      }
+
+      env {
+        name  = "STRIPE_SECRET_KEY"
+        value = var.stripe_secret_key
+      }
+
+      env {
+        name  = "STRIPE_WEBHOOK_SECRET"
+        value = var.stripe_webhook_secret
+      }
+
+      env {
+        name  = "OPENAI_API_KEY"
+        value = var.openai_api_key
+      }
+
+      # M7: Mount Cloud SQL socket so the DATABASE_URL can use the Unix socket connector
+      volume_mounts {
+        name       = "cloudsql"
+        mount_path = "/cloudsql"
+      }
+    }
+
+    # M7: Cloud SQL socket volume — Cloud Run manages the Cloud SQL Auth Proxy
+    volumes {
+      name = "cloudsql"
+      cloud_sql_instance {
+        instances = [google_sql_database_instance.postgres.connection_name]
+      }
     }
 
     timeout = "300s"
@@ -219,6 +272,13 @@ resource "google_cloud_run_v2_service" "app" {
 # =============================================================================
 # IAM - Secret Access
 # =============================================================================
+
+# M7: Grant Cloud SQL client role so the Cloud Run service account can connect
+resource "google_project_iam_member" "cloud_run_sql_client" {
+  project = var.gcp_project_id
+  role    = "roles/cloudsql.client"
+  member  = "serviceAccount:${google_service_account.cloud_run.email}"
+}
 
 resource "google_secret_manager_secret_iam_member" "nextauth_access" {
   secret_id = google_secret_manager_secret.nextauth_secret.id

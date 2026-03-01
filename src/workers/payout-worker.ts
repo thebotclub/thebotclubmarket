@@ -25,13 +25,14 @@ export const payoutWorker = new Worker<PayoutJobData>(
       throw new Error(`Bot not found: ${botId}`);
     }
 
-    if (bot.totalEarned < amount) {
+    if (bot.totalEarned.toNumber() < amount) {
       throw new Error(
         `Insufficient earnings: bot has ${bot.totalEarned}, requested ${amount}`
       );
     }
 
     if (stripeAccountId) {
+      // TODO: Implement Stripe transfer via stripe.transfers.create()
     }
 
     await db.$transaction([

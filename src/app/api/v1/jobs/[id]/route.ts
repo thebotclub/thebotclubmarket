@@ -9,6 +9,7 @@ export async function GET(
 ) {
   const botAuth = await authenticateBot(request);
   if (!botAuth.success) {
+    if (botAuth.rateLimitResponse) return botAuth.rateLimitResponse;
     const session = await auth();
     if (!session?.user) {
       return Response.json({ error: "Unauthorized" }, { status: 401 });

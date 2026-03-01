@@ -60,6 +60,19 @@ variable "nextauth_secret" {
   sensitive   = true
 }
 
+variable "github_client_id" {
+  description = "GitHub OAuth client ID"
+  type        = string
+  default     = ""
+}
+
+variable "github_client_secret" {
+  description = "GitHub OAuth client secret"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
 variable "google_client_id" {
   description = "Google OAuth client ID"
   type        = string

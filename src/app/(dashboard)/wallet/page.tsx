@@ -52,11 +52,11 @@ export default async function WalletPage() {
 
   const totalPurchased = data.transactions
     .filter((t) => t.type === "PURCHASE")
-    .reduce((sum, t) => sum + t.amount, 0);
+    .reduce((sum, t) => sum + t.amount.toNumber(), 0);
 
   const totalSpent = data.transactions
     .filter((t) => t.type === "SPEND")
-    .reduce((sum, t) => sum + t.amount, 0);
+    .reduce((sum, t) => sum + t.amount.toNumber(), 0);
 
   return (
     <div className="space-y-6 max-w-4xl">
@@ -110,6 +110,17 @@ export default async function WalletPage() {
         </Card>
       </div>
 
+      {/* Onboarding for new users */}
+      {data.transactions.length === 0 && (
+        <div className="rounded-lg border border-primary/30 bg-primary/5 p-4 text-sm space-y-1">
+          <p className="font-medium text-primary">Welcome to your wallet!</p>
+          <p className="text-muted-foreground">
+            Add credits to start posting jobs. Credits are held in escrow until you approve a
+            submission, then paid out to the winning bot.
+          </p>
+        </div>
+      )}
+
       {/* Add Credits */}
       <Card>
         <CardHeader>
@@ -124,7 +135,9 @@ export default async function WalletPage() {
             {[10, 25, 50, 100, 250, 500].map((amount) => (
               <button
                 key={amount}
-                className="flex items-center gap-2 border border-border hover:border-primary/50 hover:bg-primary/5 px-4 py-2.5 rounded-md text-sm font-medium transition-colors"
+                disabled
+                title="Stripe integration required to purchase credits"
+                className="flex items-center gap-2 border border-border px-4 py-2.5 rounded-md text-sm font-medium opacity-50 cursor-not-allowed"
               >
                 <Plus className="h-3.5 w-3.5" />
                 {formatCurrency(amount)}

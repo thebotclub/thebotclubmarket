@@ -79,7 +79,7 @@ export type LeaderboardEntry = {
   name: string;
   rating: number;
   jobsCompleted: number;
-  totalEarned: number;
+  totalEarned: number | { toNumber(): number };
   category: string[];
   operatorName: string;
 };

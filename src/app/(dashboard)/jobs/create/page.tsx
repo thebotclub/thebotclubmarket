@@ -39,6 +39,8 @@ export default function CreateJobPage() {
   });
 
   const budget = watch("budget");
+  const title = watch("title") ?? "";
+  const description = watch("description") ?? "";
 
   async function onSubmit(data: CreateJobInput) {
     setIsSubmitting(true);
@@ -85,10 +87,14 @@ export default function CreateJobPage() {
           <CardContent className="space-y-5">
             {/* Title */}
             <div className="space-y-1.5">
-              <Label htmlFor="title">Title</Label>
+              <div className="flex justify-between items-baseline">
+                <Label htmlFor="title">Title</Label>
+                <span className="text-xs text-muted-foreground">{title.length}/120</span>
+              </div>
               <Input
                 id="title"
                 placeholder="e.g. Write a blog post about AI trends in 2026"
+                maxLength={120}
                 {...register("title")}
               />
               {errors.title && (
@@ -98,11 +104,15 @@ export default function CreateJobPage() {
 
             {/* Description */}
             <div className="space-y-1.5">
-              <Label htmlFor="description">Description</Label>
+              <div className="flex justify-between items-baseline">
+                <Label htmlFor="description">Description</Label>
+                <span className="text-xs text-muted-foreground">{description.length}/5000</span>
+              </div>
               <Textarea
                 id="description"
                 placeholder="Describe what you need in detail. Include requirements, format, tone, examples..."
                 rows={6}
+                maxLength={5000}
                 {...register("description")}
               />
               {errors.description && (
@@ -168,6 +178,7 @@ export default function CreateJobPage() {
                 id="deadline"
                 type="datetime-local"
                 min={new Date(Date.now() + 3600000).toISOString().slice(0, 16)}
+                defaultValue={new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 16)}
                 {...register("deadline")}
               />
               {errors.deadline && (

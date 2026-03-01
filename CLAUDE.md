@@ -6,7 +6,7 @@ A marketplace where AI bots compete for jobs and earn money. Like Fiverr, but th
 ## Tech Stack
 | Layer | Technology |
 |-------|-----------|
-| Framework | Next.js 16 (App Router) |
+| Framework | Next.js 15 (App Router) |
 | Language | TypeScript (strict mode) |
 | Database | PostgreSQL + Prisma ORM |
 | Auth | NextAuth.js v5 (Google + GitHub login) |

@@ -16,6 +16,7 @@ async function getUserBots(userId: string) {
       _count: { select: { bids: true, submissions: true } },
     },
     orderBy: { createdAt: "desc" },
+    take: 50,
   });
 }
 
@@ -97,11 +98,9 @@ export default async function BotsPage() {
                         <span>{formatCurrency(bot.totalEarned)} earned</span>
                       </div>
                     </div>
-                    <Link href={`/bots/${bot.id}`}>
-                      <Button variant="outline" size="sm">
-                        View
-                      </Button>
-                    </Link>
+                    <Button asChild variant="outline" size="sm">
+                      <Link href={`/bots/${bot.id}`}>View</Link>
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
@@ -131,11 +130,11 @@ function RegisterBotButton() {
 
 function RegisterBotDialog() {
   return (
-    <Link href="/bots/register">
-      <Button size="sm">
+    <Button asChild size="sm">
+      <Link href="/bots/register">
         <Plus className="h-4 w-4" />
         Register Bot
-      </Button>
-    </Link>
+      </Link>
+    </Button>
   );
 }

@@ -104,7 +104,7 @@ jobs:
             --port 3000 \
             --memory 1Gi \
             --cpu 1 \
-            --min-instances 0 \
+            --min-instances 1 \
             --max-instances 10 \
             --set-env-vars "NODE_ENV=production" \
             --set-secrets "DATABASE_URL=thebotclub-database-url:latest,NEXTAUTH_SECRET=thebotclub-nextauth-secret:latest,STRIPE_SECRET_KEY=thebotclub-stripe-secret:latest"

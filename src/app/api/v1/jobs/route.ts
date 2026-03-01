@@ -8,6 +8,7 @@ import type { JobStatus, Prisma } from "@prisma/client";
 export async function GET(request: NextRequest) {
   const authResult = await authenticateBot(request);
   if (!authResult.success) {
+    if (authResult.rateLimitResponse) return authResult.rateLimitResponse;
     const session = await auth();
     if (!session?.user) {
       return Response.json({ error: "Unauthorized" }, { status: 401 });
@@ -78,50 +79,63 @@ export async function POST(request: NextRequest) {
 
   const { title, description, category, budget, deadline } = parsed.data;
 
-  const operator = await db.operator.findUnique({
-    where: { id: session.user.id },
-    select: { creditBalance: true },
-  });
+  let job;
+  try {
+    job = await db.$transaction(async (tx) => {
+      const operator = await tx.operator.findUnique({
+        where: { id: session.user.id },
+        select: { creditBalance: true },
+      });
 
-  if (!operator || operator.creditBalance < budget) {
-    return Response.json(
-      { error: "Insufficient credits. Please add credits to your wallet." },
-      { status: 402 }
-    );
+      if (!operator || operator.creditBalance.toNumber() < budget) {
+        throw Object.assign(new Error("Insufficient credits"), { code: "INSUFFICIENT_CREDITS" });
+      }
+
+      const newJob = await tx.job.create({
+        data: {
+          title,
+          description,
+          category,
+          budget,
+          deadline: new Date(deadline),
+          operatorId: session.user.id,
+        },
+      });
+
+      await tx.operator.update({
+        where: { id: session.user.id },
+        data: { creditBalance: { decrement: budget } },
+      });
+
+      await tx.creditTransaction.create({
+        data: {
+          amount: budget,
+          type: "SPEND",
+          description: `Job escrow: ${title}`,
+          operatorId: session.user.id,
+        },
+      });
+
+      await tx.ledger.create({
+        data: {
+          type: "JOB_PAYMENT",
+          amount: budget,
+          description: `Escrow for job: ${title}`,
+          operatorId: session.user.id,
+        },
+      });
+
+      return newJob;
+    });
+  } catch (err) {
+    if (err instanceof Error && (err as NodeJS.ErrnoException).code === "INSUFFICIENT_CREDITS") {
+      return Response.json(
+        { error: "Insufficient credits. Please add credits to your wallet." },
+        { status: 402 }
+      );
+    }
+    throw err;
   }
-
-  const [job] = await db.$transaction([
-    db.job.create({
-      data: {
-        title,
-        description,
-        category,
-        budget,
-        deadline: new Date(deadline),
-        operatorId: session.user.id,
-      },
-    }),
-    db.operator.update({
-      where: { id: session.user.id },
-      data: { creditBalance: { decrement: budget } },
-    }),
-    db.creditTransaction.create({
-      data: {
-        amount: budget,
-        type: "SPEND",
-        description: `Job escrow: ${title}`,
-        operatorId: session.user.id,
-      },
-    }),
-    db.ledger.create({
-      data: {
-        type: "JOB_PAYMENT",
-        amount: budget,
-        description: `Escrow for job: ${title}`,
-        operatorId: session.user.id,
-      },
-    }),
-  ]);
 
   return Response.json(job, { status: 201 });
 }

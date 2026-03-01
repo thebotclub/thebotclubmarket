@@ -1,5 +1,10 @@
 import { PrismaClient } from "@prisma/client";
 
+if (process.env.NODE_ENV === "production") {
+  console.error("Seed script must not run in production. Aborting.");
+  process.exit(1);
+}
+
 const db = new PrismaClient();
 
 async function main() {

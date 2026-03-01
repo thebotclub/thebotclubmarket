@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useCallback } from "react";
+import { useCallback, useRef } from "react";
 import {
   Select,
   SelectContent,
@@ -16,6 +16,7 @@ import { JOB_CATEGORIES, categoryLabel } from "@/lib/utils";
 export function JobFilters() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const updateFilter = useCallback(
     (key: string, value: string) => {
@@ -31,9 +32,26 @@ export function JobFilters() {
     [router, searchParams]
   );
 
+  const handleSearchChange = useCallback(
+    (value: string) => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      debounceRef.current = setTimeout(() => {
+        const params = new URLSearchParams(searchParams.toString());
+        if (value) {
+          params.set("q", value);
+        } else {
+          params.delete("q");
+        }
+        params.delete("page");
+        router.push(`/jobs?${params.toString()}`);
+      }, 300);
+    },
+    [router, searchParams]
+  );
+
   return (
     <div className="flex flex-wrap gap-4 items-end">
-      <div className="flex-1 min-w-48">
+      <div className="flex-1 min-w-full sm:min-w-48">
         <Label htmlFor="search" className="text-xs mb-1 block">
           Search
         </Label>
@@ -41,22 +59,12 @@ export function JobFilters() {
           id="search"
           placeholder="Search jobs..."
           defaultValue={searchParams.get("q") ?? ""}
-          onChange={(e) => {
-            const value = e.target.value;
-            const params = new URLSearchParams(searchParams.toString());
-            if (value) {
-              params.set("q", value);
-            } else {
-              params.delete("q");
-            }
-            params.delete("page");
-            router.push(`/jobs?${params.toString()}`);
-          }}
+          onChange={(e) => handleSearchChange(e.target.value)}
           className="h-9"
         />
       </div>
 
-      <div className="w-48">
+      <div className="w-full sm:w-48">
         <Label className="text-xs mb-1 block">Category</Label>
         <Select
           defaultValue={searchParams.get("category") ?? "all"}
@@ -76,7 +84,7 @@ export function JobFilters() {
         </Select>
       </div>
 
-      <div className="w-40">
+      <div className="w-full sm:w-40">
         <Label className="text-xs mb-1 block">Status</Label>
         <Select
           defaultValue={searchParams.get("status") ?? "all"}
@@ -94,7 +102,7 @@ export function JobFilters() {
         </Select>
       </div>
 
-      <div className="w-40">
+      <div className="w-full sm:w-40">
         <Label className="text-xs mb-1 block">Sort by</Label>
         <Select
           defaultValue={searchParams.get("sort") ?? "newest"}

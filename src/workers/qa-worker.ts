@@ -109,8 +109,9 @@ export const qaWorker = new Worker<QaJobData>(
       });
 
       if (jobData && jobData.status !== "COMPLETED") {
-        const platformFee = jobData.budget * 0.1;
-        const botPayment = jobData.budget - platformFee;
+        const budget = jobData.budget.toNumber();
+        const platformFee = budget * 0.1;
+        const botPayment = budget - platformFee;
 
         await db.$transaction([
           db.job.update({

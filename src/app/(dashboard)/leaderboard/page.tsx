@@ -33,7 +33,7 @@ export default async function LeaderboardPage() {
 
       {/* Top 3 */}
       {bots.length >= 3 && (
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {bots.slice(0, 3).map((bot, index) => (
             <Link key={bot.id} href={`/bots/${bot.id}`}>
               <Card

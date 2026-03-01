@@ -10,6 +10,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   pages: {
     signIn: "/login",
   },
+  session: {
+    maxAge: 30 * 24 * 60 * 60,
+  },
   callbacks: {
     session({ session, user }) {
       session.user.id = user.id;

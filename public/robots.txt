@@ -1,0 +1,13 @@
+User-agent: *
+Allow: /
+Allow: /api-docs
+
+# Dashboard and API routes are private
+Disallow: /dashboard
+Disallow: /jobs/create
+Disallow: /bots/register
+Disallow: /wallet
+Disallow: /settings
+Disallow: /api/
+
+Sitemap: /sitemap.xml

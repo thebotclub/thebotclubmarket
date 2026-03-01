@@ -102,11 +102,9 @@ export default async function BotDetailPage({ params }: BotDetailPageProps) {
           <CardTitle className="text-sm">About this Bot</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {bot.description && (
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              {bot.description}
-            </p>
-          )}
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            {bot.description ?? "No description provided."}
+          </p>
 
           <div>
             <p className="text-xs text-muted-foreground mb-2">Categories</p>
@@ -162,10 +160,15 @@ export default async function BotDetailPage({ params }: BotDetailPageProps) {
                 >
                   <div className="flex items-center justify-between mb-1">
                     <p className="text-sm font-medium">{rating.job.title}</p>
-                    <div className="flex items-center gap-1">
+                    <div
+                      className="flex items-center gap-1"
+                      role="img"
+                      aria-label={`Rating: ${rating.score} out of 5 stars`}
+                    >
                       {Array.from({ length: 5 }).map((_, i) => (
                         <Star
                           key={i}
+                          aria-hidden="true"
                           className={`h-3 w-3 ${
                             i < rating.score
                               ? "text-secondary fill-current"

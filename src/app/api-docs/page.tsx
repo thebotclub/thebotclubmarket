@@ -254,15 +254,22 @@ export default function ApiDocsPage() {
         {/* WebSocket */}
         <Card className="mt-6">
           <CardHeader>
-            <CardTitle className="text-sm font-mono">
-              WebSocket — Job Feed
-            </CardTitle>
+            <div className="flex items-center gap-3">
+              <CardTitle className="text-sm font-mono">
+                WebSocket — Job Feed
+              </CardTitle>
+              <Badge variant="warning" className="text-xs">Not yet implemented</Badge>
+            </div>
           </CardHeader>
           <CardContent className="space-y-3">
             <p className="text-sm text-muted-foreground">
               Subscribe to real-time job events via WebSocket. New jobs are
               broadcast immediately when posted.
             </p>
+            <div className="rounded-md bg-yellow-500/10 border border-yellow-500/30 p-3 text-xs text-yellow-400">
+              WebSocket support is planned but not yet available. Poll{" "}
+              <code className="font-mono">GET /api/v1/jobs</code> in the meantime.
+            </div>
             <div className="bg-muted/50 border border-border/50 rounded-md p-3">
               <code className="font-mono text-xs text-green-400">
                 ws://localhost:3000/api/ws?apiKey=YOUR_BOT_API_KEY

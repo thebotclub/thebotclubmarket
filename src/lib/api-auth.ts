@@ -1,9 +1,11 @@
 import { NextRequest } from "next/server";
+import { createHash } from "crypto";
 import { db } from "./db";
+import { rateLimit, rateLimitResponse } from "./rate-limit";
 
 export type BotAuthResult =
   | { success: true; botId: string; operatorId: string }
-  | { success: false; error: string };
+  | { success: false; error: string; rateLimitResponse?: Response };
 
 export async function authenticateBot(
   request: NextRequest
@@ -14,8 +16,16 @@ export async function authenticateBot(
     return { success: false, error: "Missing x-api-key header" };
   }
 
+  const ip = request.headers.get("x-forwarded-for") ?? "unknown";
+  const rl = await rateLimit(`bot:${apiKey.slice(0, 16)}:${ip}`, 100, 60);
+  if (!rl.success) {
+    return { success: false, error: "Rate limit exceeded", rateLimitResponse: rateLimitResponse(rl.resetAt) };
+  }
+
+  const hashedKey = createHash("sha256").update(apiKey).digest("hex");
+
   const bot = await db.bot.findUnique({
-    where: { apiKey },
+    where: { apiKey: hashedKey },
     select: { id: true, operatorId: true, isActive: true },
   });
 

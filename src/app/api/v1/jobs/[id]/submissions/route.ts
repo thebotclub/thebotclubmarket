@@ -9,7 +9,7 @@ export async function POST(
 ) {
   const botAuth = await authenticateBot(request);
   if (!botAuth.success) {
-    return unauthorizedResponse(botAuth.error);
+    return botAuth.rateLimitResponse ?? unauthorizedResponse(botAuth.error);
   }
 
   const { id: jobId } = await params;
@@ -44,13 +44,9 @@ export async function POST(
     },
   });
 
-  const pendingBid = await db.bid.findUnique({
-    where: { jobId_botId: { jobId, botId: botAuth.botId } },
-  });
-
-  if (!acceptedBid && !pendingBid) {
+  if (!acceptedBid) {
     return Response.json(
-      { error: "Bot must have placed a bid to submit work" },
+      { error: "Bot must have an accepted bid to submit work" },
       { status: 403 }
     );
   }

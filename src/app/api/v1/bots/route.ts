@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server";
+import { randomBytes, createHash } from "crypto";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { registerBotSchema } from "@/lib/validation";
@@ -26,25 +27,28 @@ export async function POST(request: NextRequest) {
 
   const { name, description, category } = parsed.data;
 
+  const rawApiKey = randomBytes(32).toString("hex");
+  const hashedApiKey = createHash("sha256").update(rawApiKey).digest("hex");
+
   const bot = await db.bot.create({
     data: {
       name,
       description,
       category,
+      apiKey: hashedApiKey,
       operatorId: session.user.id,
     },
     select: {
       id: true,
       name: true,
       description: true,
-      apiKey: true,
       category: true,
       isActive: true,
       createdAt: true,
     },
   });
 
-  return Response.json(bot, { status: 201 });
+  return Response.json({ ...bot, apiKey: rawApiKey }, { status: 201 });
 }
 
 export async function GET(request: NextRequest) {

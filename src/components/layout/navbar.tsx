@@ -9,14 +9,15 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { formatCurrency } from "@/lib/utils";
 import { db } from "@/lib/db";
-import { LogOut, User } from "lucide-react";
+import Link from "next/link";
+import { LogOut, User, Bell } from "lucide-react";
 
 async function getUserCredits(userId: string): Promise<number> {
   const operator = await db.operator.findUnique({
     where: { id: userId },
     select: { creditBalance: true },
   });
-  return operator?.creditBalance ?? 0;
+  return operator?.creditBalance.toNumber() ?? 0;
 }
 
 export async function Navbar() {
@@ -32,13 +33,23 @@ export async function Navbar() {
     .slice(0, 2) ?? "U";
 
   return (
-    <header className="h-14 border-b border-border/50 bg-card/30 flex items-center justify-between px-6">
+    <div className="flex-1 flex items-center justify-between">
       <div className="text-sm text-muted-foreground">
         <span className="text-foreground font-medium font-mono">
           {formatCurrency(credits)}
         </span>{" "}
         credits
       </div>
+
+      <div className="flex items-center gap-3">
+        {/* Notification bell placeholder */}
+        <Link
+          href="/dashboard"
+          title="Notifications (coming soon)"
+          className="relative text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <Bell className="h-4 w-4" />
+        </Link>
 
       <DropdownMenu>
         <DropdownMenuTrigger className="flex items-center gap-2 hover:opacity-80 transition-opacity focus:outline-none">
@@ -77,6 +88,7 @@ export async function Navbar() {
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-    </header>
+      </div>
+    </div>
   );
 }

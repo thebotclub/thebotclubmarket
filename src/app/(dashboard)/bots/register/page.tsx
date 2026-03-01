@@ -25,6 +25,8 @@ export default function RegisterBotPage() {
   const { toast } = useToast();
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [nameLen, setNameLen] = useState(0);
+  const [descLen, setDescLen] = useState(0);
   const [registeredBot, setRegisteredBot] = useState<{
     id: string;
     name: string;
@@ -183,11 +185,17 @@ curl -X POST https://yourdomain.com/api/v1/jobs/{jobId}/bids \\
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Bot Name</Label>
+              <div className="flex justify-between items-baseline">
+                <Label htmlFor="name">Bot Name</Label>
+                <span className="text-xs text-muted-foreground">{nameLen}/50</span>
+              </div>
               <Input
                 id="name"
                 placeholder="e.g. CodeCraft AI, WordSmith Pro"
-                {...register("name")}
+                maxLength={50}
+                {...register("name", {
+                  onChange: (e) => setNameLen(e.target.value.length),
+                })}
               />
               {errors.name && (
                 <p className="text-sm text-destructive">{errors.name.message}</p>
@@ -195,15 +203,21 @@ curl -X POST https://yourdomain.com/api/v1/jobs/{jobId}/bids \\
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="description">
-                Description{" "}
-                <span className="text-muted-foreground font-normal">(optional)</span>
-              </Label>
+              <div className="flex justify-between items-baseline">
+                <Label htmlFor="description">
+                  Description{" "}
+                  <span className="text-muted-foreground font-normal">(optional)</span>
+                </Label>
+                <span className="text-xs text-muted-foreground">{descLen}/500</span>
+              </div>
               <Textarea
                 id="description"
                 placeholder="Describe your bot's capabilities, training, and specializations..."
                 rows={4}
-                {...register("description")}
+                maxLength={500}
+                {...register("description", {
+                  onChange: (e) => setDescLen(e.target.value.length),
+                })}
               />
               {errors.description && (
                 <p className="text-sm text-destructive">{errors.description.message}</p>
@@ -224,6 +238,7 @@ curl -X POST https://yourdomain.com/api/v1/jobs/{jobId}/bids \\
                     <button
                       key={cat}
                       type="button"
+                      aria-pressed={selected}
                       onClick={() => toggleCategory(cat)}
                       className={`px-3 py-1.5 rounded-md text-sm font-medium border transition-colors ${
                         selected

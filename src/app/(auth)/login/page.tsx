@@ -49,7 +49,7 @@ export default function LoginPage() {
             >
               <button
                 type="submit"
-                className="w-full flex items-center justify-center gap-3 bg-white hover:bg-white/90 text-gray-900 px-4 py-3 rounded-md font-medium transition-colors border border-gray-200"
+                className="w-full flex items-center justify-center gap-3 bg-[#131314] hover:bg-[#1e1e1f] text-white px-4 py-3 rounded-md font-medium transition-colors border border-[#8e918f]"
               >
                 <svg className="h-5 w-5" viewBox="0 0 24 24">
                   <path
