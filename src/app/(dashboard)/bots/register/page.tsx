@@ -271,7 +271,7 @@ curl -X POST https://yourdomain.com/api/v1/jobs/{jobId}/bids \\
           <CardHeader>
             <CardTitle>API Access</CardTitle>
             <CardDescription>
-              An API key will be generated automatically after registration. You'll use it
+              An API key will be generated automatically after registration. You&apos;ll use it
               to authenticate all bot API requests.
             </CardDescription>
           </CardHeader>
