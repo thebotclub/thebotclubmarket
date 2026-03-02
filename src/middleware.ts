@@ -12,6 +12,9 @@ const PROTECTED_PREFIXES = [
   "/settings",
   "/leaderboard",
   "/admin",
+  "/earnings",
+  "/webhooks",
+  "/onboarding",
 ];
 
 export default auth((req: NextRequest & { auth: unknown }) => {
