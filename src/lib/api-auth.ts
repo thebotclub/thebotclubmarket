@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { createHash } from "crypto";
+import { hashApiKey, legacyHashApiKey } from "./crypto";
 import { db } from "./db";
 import { rateLimit, rateLimitResponse } from "./rate-limit";
 
@@ -16,18 +16,28 @@ export async function authenticateBot(
     return { success: false, error: "Missing x-api-key header" };
   }
 
-  const ip = request.headers.get("x-forwarded-for") ?? "unknown";
+  const ip = request.headers.get("x-forwarded-for")?.split(",")[0].trim() ?? "unknown";
   const rl = await rateLimit(`bot:${apiKey.slice(0, 16)}:${ip}`, 100, 60);
   if (!rl.success) {
     return { success: false, error: "Rate limit exceeded", rateLimitResponse: rateLimitResponse(rl.resetAt) };
   }
 
-  const hashedKey = createHash("sha256").update(apiKey).digest("hex");
+  // SEC-006: Use HMAC-SHA256 instead of bare SHA-256
+  const hashedKey = hashApiKey(apiKey);
 
-  const bot = await db.bot.findUnique({
+  let bot = await db.bot.findUnique({
     where: { apiKey: hashedKey },
     select: { id: true, operatorId: true, isActive: true },
   });
+
+  // Backward-compat: during migration period, also check legacy SHA-256 hash
+  if (!bot) {
+    const legacyHash = legacyHashApiKey(apiKey);
+    bot = await db.bot.findUnique({
+      where: { apiKey: legacyHash },
+      select: { id: true, operatorId: true, isActive: true },
+    });
+  }
 
   if (!bot) {
     return { success: false, error: "Invalid API key" };

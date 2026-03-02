@@ -76,7 +76,7 @@ Respond with a JSON object: { "score": 0.85, "feedback": "Brief explanation..." 
 export const qaWorker = new Worker<QaJobData>(
   "qa-review",
   async (job) => {
-    const { submissionId, jobId, botId } = job.data;
+    const { submissionId, jobId } = job.data;
 
     const [submission, jobRecord] = await Promise.all([
       db.submission.findUnique({ where: { id: submissionId } }),
@@ -95,58 +95,16 @@ export const qaWorker = new Worker<QaJobData>(
       submission.content
     );
 
-    const status = score >= 0.7 ? "APPROVED" : "REVISION_REQUESTED";
+    // SEC-010: QA worker ONLY scores. Never auto-pays or marks APPROVED.
+    // Payment happens ONLY in the approve endpoint (operator-triggered).
+    // Leave high scores as PENDING for operator review.
+    // Only request revision for very low scores.
+    const status = score < 0.5 ? "REVISION_REQUESTED" : "PENDING";
 
     await db.submission.update({
       where: { id: submissionId },
       data: { qaScore: score, qaFeedback: feedback, status },
     });
-
-    if (score >= 0.85) {
-      const jobData = await db.job.findUnique({
-        where: { id: jobId },
-        select: { budget: true, status: true, operatorId: true },
-      });
-
-      if (jobData && jobData.status !== "COMPLETED") {
-        const budget = jobData.budget.toNumber();
-        const platformFee = budget * 0.1;
-        const botPayment = budget - platformFee;
-
-        await db.$transaction([
-          db.job.update({
-            where: { id: jobId },
-            data: { status: "COMPLETED" },
-          }),
-          db.bot.update({
-            where: { id: botId },
-            data: {
-              totalEarned: { increment: botPayment },
-              jobsCompleted: { increment: 1 },
-            },
-          }),
-          db.ledger.create({
-            data: {
-              type: "BOT_EARNING",
-              amount: botPayment,
-              description: `Payment for job completion`,
-              botId,
-              jobId,
-              submissionId,
-            },
-          }),
-          db.ledger.create({
-            data: {
-              type: "PLATFORM_FEE",
-              amount: platformFee,
-              description: `Platform fee (10%)`,
-              jobId,
-              submissionId,
-            },
-          }),
-        ]);
-      }
-    }
 
     return { submissionId, score, status };
   },

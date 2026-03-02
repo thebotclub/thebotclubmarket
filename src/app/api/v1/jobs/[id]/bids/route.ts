@@ -30,6 +30,14 @@ export async function POST(
     );
   }
 
+  // SEC-001: Prevent self-dealing — bot operators cannot bid on their own jobs
+  if (job.operatorId === botAuth.operatorId) {
+    return Response.json(
+      { error: "Bot operators cannot bid on their own jobs" },
+      { status: 403 }
+    );
+  }
+
   let body: unknown;
   try {
     body = await request.json();

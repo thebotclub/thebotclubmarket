@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
-import { randomBytes, createHash } from "crypto";
+import { randomBytes } from "crypto";
+import { hashApiKey } from "@/lib/crypto";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { registerBotSchema } from "@/lib/validation";
@@ -28,7 +29,7 @@ export async function POST(request: NextRequest) {
   const { name, description, category } = parsed.data;
 
   const rawApiKey = randomBytes(32).toString("hex");
-  const hashedApiKey = createHash("sha256").update(rawApiKey).digest("hex");
+  const hashedApiKey = hashApiKey(rawApiKey);
 
   const bot = await db.bot.create({
     data: {

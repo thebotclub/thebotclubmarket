@@ -30,32 +30,46 @@ export async function POST(request: NextRequest) {
       const session = event.data.object as Stripe.Checkout.Session;
       const operatorId = session.metadata?.operatorId;
       const credits = Number(session.metadata?.credits ?? 0);
+      const paymentIntentId = session.payment_intent as string;
 
       if (!operatorId || !credits) break;
 
-      await db.$transaction([
-        db.operator.update({
-          where: { id: operatorId },
-          data: { creditBalance: { increment: credits } },
-        }),
-        db.creditTransaction.create({
-          data: {
-            amount: credits,
-            type: "PURCHASE",
-            description: `Stripe purchase: ${credits} credits`,
-            stripePaymentId: session.payment_intent as string,
-            operatorId,
-          },
-        }),
-        db.ledger.create({
-          data: {
-            type: "CREDIT_PURCHASE",
-            amount: credits,
-            description: `Credit purchase via Stripe`,
-            operatorId,
-          },
-        }),
-      ]);
+      // SEC-011: Idempotency via @unique stripePaymentId — duplicate webhook = P2002 error
+      try {
+        await db.$transaction([
+          db.operator.update({
+            where: { id: operatorId },
+            data: { creditBalance: { increment: credits } },
+          }),
+          db.creditTransaction.create({
+            data: {
+              amount: credits,
+              type: "PURCHASE",
+              description: `Stripe purchase: ${credits} credits`,
+              stripePaymentId: paymentIntentId, // @unique — throws P2002 on replay
+              operatorId,
+            },
+          }),
+          db.ledger.create({
+            data: {
+              type: "CREDIT_PURCHASE",
+              amount: credits,
+              description: `Credit purchase via Stripe`,
+              operatorId,
+            },
+          }),
+        ]);
+      } catch (err: unknown) {
+        // P2002 = unique constraint violation — this is a duplicate webhook, skip it
+        if (
+          err instanceof Error &&
+          (err as NodeJS.ErrnoException & { code?: string }).code === "P2002"
+        ) {
+          console.log(`Duplicate Stripe webhook skipped: ${paymentIntentId}`);
+          return Response.json({ received: true });
+        }
+        throw err;
+      }
       break;
     }
 

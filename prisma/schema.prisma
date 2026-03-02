@@ -197,6 +197,7 @@ model Ledger {
 
   jobId        String?
   submissionId String?
+  idempotencyKey String?
 
   createdAt DateTime @default(now())
 
@@ -235,7 +236,7 @@ model CreditTransaction {
   amount          Decimal    @db.Decimal(12, 2)
   type            CreditType
   description     String
-  stripePaymentId String?
+  stripePaymentId String?  @unique
 
   operatorId String
   operator   Operator @relation(fields: [operatorId], references: [id])

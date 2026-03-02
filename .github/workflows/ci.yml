@@ -10,7 +10,7 @@ jobs:
   validate:
     name: 🔍 Lint & Build
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -18,10 +18,24 @@ jobs:
           version: 10
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec prisma generate
+
+      - name: Audit dependencies (SEC-018)
+        run: pnpm audit --audit-level=high
+        continue-on-error: false
+
+      - name: Security check - no secrets in source
+        run: |
+          echo "Checking for accidentally committed secrets..."
+          if grep -r "bc_live_" src/ --include="*.ts" --include="*.tsx" 2>/dev/null | grep -v ".test." | grep -v "// example"; then
+            echo "ERROR: Live API key found in source code!"
+            exit 1
+          fi
+          echo "Secret check passed."
+
       - run: pnpm run lint
       - run: pnpm run build
         env:

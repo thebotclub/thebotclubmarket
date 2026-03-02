@@ -6,6 +6,7 @@ export interface RateLimitResult {
   resetAt: number;
 }
 
+// SEC-014: Atomic pipeline prevents INCR/EXPIRE race condition
 export async function rateLimit(
   identifier: string,
   limit = 100,
@@ -13,13 +14,14 @@ export async function rateLimit(
 ): Promise<RateLimitResult> {
   const key = `rate_limit:${identifier}`;
 
-  const count = await redis.incr(key);
-  if (count === 1) {
-    await redis.expire(key, windowSeconds);
-  }
+  const pipeline = redis.pipeline();
+  pipeline.incr(key);
+  pipeline.expire(key, windowSeconds); // Always set — idempotent
+  const results = await pipeline.exec();
 
+  const count = (results![0][1] as number) ?? 0;
   const ttl = await redis.ttl(key);
-  const resetAt = Date.now() + ttl * 1000;
+  const resetAt = Date.now() + Math.max(ttl, 0) * 1000;
 
   return {
     success: count <= limit,
@@ -27,6 +29,23 @@ export async function rateLimit(
     resetAt,
   };
 }
+
+// SEC-003: Session-based rate limiter for operator/user endpoints
+export async function rateLimitSession(
+  userId: string,
+  limit = 60,
+  windowSeconds = 60
+): Promise<RateLimitResult> {
+  return rateLimit(`session:${userId}`, limit, windowSeconds);
+}
+
+export const RATE_LIMITS = {
+  BOT_DEFAULT:        { limit: 100, window: 60 },
+  SESSION_DEFAULT:    { limit: 60,  window: 60 },
+  SESSION_WRITE:      { limit: 20,  window: 60 },
+  SESSION_JOB_CREATE: { limit: 5,   window: 60 },
+  SESSION_PAYMENT:    { limit: 3,   window: 300 },
+} as const;
 
 export function rateLimitResponse(resetAt: number): Response {
   return Response.json(

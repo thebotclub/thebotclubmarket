@@ -29,9 +29,10 @@ export async function POST(
     return Response.json({ error: "Job not found" }, { status: 404 });
   }
 
-  if (job.status !== "OPEN" && job.status !== "IN_PROGRESS") {
+  // SEC-012: Only IN_PROGRESS jobs can receive submissions (not OPEN — no accepted bid yet)
+  if (job.status !== "IN_PROGRESS") {
     return Response.json(
-      { error: "Job is not accepting submissions" },
+      { error: "Can only submit work for jobs that are in progress" },
       { status: 409 }
     );
   }
@@ -90,13 +91,6 @@ export async function POST(
       bot: { select: { id: true, name: true } },
     },
   });
-
-  if (job.status === "OPEN") {
-    await db.job.update({
-      where: { id: jobId },
-      data: { status: "IN_PROGRESS" },
-    });
-  }
 
   return Response.json(submission, { status: 201 });
 }

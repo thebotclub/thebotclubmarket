@@ -3,8 +3,8 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { z } from "zod";
 
-const rateSchema = z.object({
-  botId: z.string(),
+// SEC-002: botId intentionally absent — derived server-side from accepted bid
+const rateJobSchema = z.object({
   score: z.number().int().min(1).max(5),
   comment: z.string().max(500).optional(),
 });
@@ -22,7 +22,7 @@ export async function POST(
 
   const job = await db.job.findUnique({
     where: { id: jobId },
-    select: { id: true, status: true, operatorId: true },
+    select: { id: true, status: true, operatorId: true, updatedAt: true },
   });
 
   if (!job) {
@@ -33,8 +33,9 @@ export async function POST(
     return Response.json({ error: "Only the job owner can rate bots" }, { status: 403 });
   }
 
+  // SEC-002: Verify job is COMPLETED before allowing rating
   if (job.status !== "COMPLETED") {
-    return Response.json({ error: "Can only rate bots on completed jobs" }, { status: 409 });
+    return Response.json({ error: "Can only rate completed jobs" }, { status: 422 });
   }
 
   let body: unknown;
@@ -44,7 +45,7 @@ export async function POST(
     return Response.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  const parsed = rateSchema.safeParse(body);
+  const parsed = rateJobSchema.safeParse(body);
   if (!parsed.success) {
     return Response.json(
       { error: "Validation failed", details: parsed.error.flatten() },
@@ -52,34 +53,53 @@ export async function POST(
     );
   }
 
-  const { botId, score, comment } = parsed.data;
+  const { score, comment } = parsed.data;
 
-  const existing = await db.rating.findUnique({
-    where: { jobId_botId: { jobId, botId } },
+  // SEC-002: Derive botId from the ACCEPTED bid — never trust user input
+  const winningBid = await db.bid.findFirst({
+    where: { jobId, status: "ACCEPTED" },
+    select: { botId: true },
   });
 
-  if (existing) {
-    return Response.json({ error: "Already rated this bot for this job" }, { status: 409 });
+  if (!winningBid) {
+    return Response.json({ error: "No accepted bid found for this job" }, { status: 422 });
   }
 
-  await db.$transaction(async (tx) => {
-    await tx.rating.create({
-      data: { score, comment, jobId, botId },
-    });
+  const botId = winningBid.botId; // server-derived, not user-supplied
 
-    const ratings = await tx.rating.findMany({
-      where: { botId },
-      select: { score: true },
-    });
+  try {
+    await db.$transaction(async (tx) => {
+      const existing = await tx.rating.findUnique({
+        where: { jobId_botId: { jobId, botId } },
+      });
+      if (existing) {
+        throw Object.assign(new Error("Already rated this bot for this job"), { code: "ALREADY_RATED" });
+      }
 
-    const avgRating =
-      ratings.reduce((sum, r) => sum + r.score, 0) / ratings.length;
+      await tx.rating.create({
+        data: { score, comment, jobId, botId },
+      });
 
-    await tx.bot.update({
-      where: { id: botId },
-      data: { rating: Math.round(avgRating * 10) / 10 },
+      // Recompute average rating from all ratings
+      const ratings = await tx.rating.findMany({
+        where: { botId },
+        select: { score: true },
+      });
+
+      const avgRating =
+        ratings.reduce((sum, r) => sum + r.score, 0) / ratings.length;
+
+      await tx.bot.update({
+        where: { id: botId },
+        data: { rating: Math.round(avgRating * 10) / 10 },
+      });
     });
-  });
+  } catch (err: unknown) {
+    if (err instanceof Error && (err as NodeJS.ErrnoException & { code?: string }).code === "ALREADY_RATED") {
+      return Response.json({ error: err.message }, { status: 409 });
+    }
+    throw err;
+  }
 
   return Response.json({ success: true }, { status: 201 });
 }

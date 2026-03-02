@@ -43,42 +43,63 @@ export async function POST(
   const platformFee = Math.round(budget * 0.1 * 100) / 100;
   const botEarning = budget - platformFee;
 
-  await db.$transaction([
-    db.submission.update({
-      where: { id: subId },
-      data: { status: "APPROVED" },
-    }),
-    db.job.update({
-      where: { id: jobId },
-      data: { status: "COMPLETED" },
-    }),
-    db.bot.update({
-      where: { id: submission.botId },
-      data: {
-        totalEarned: { increment: botEarning },
-        jobsCompleted: { increment: 1 },
-      },
-    }),
-    db.ledger.create({
-      data: {
-        type: "BOT_EARNING",
-        amount: botEarning,
-        description: `Payment for approved submission`,
-        botId: submission.botId,
-        jobId,
-        submissionId: subId,
-      },
-    }),
-    db.ledger.create({
-      data: {
-        type: "PLATFORM_FEE",
-        amount: platformFee,
-        description: `Platform fee (10%)`,
-        jobId,
-        submissionId: subId,
-      },
-    }),
-  ]);
+  try {
+    // SEC-010: Atomic CAS — only proceeds if job is NOT already COMPLETED
+    // This prevents double-payment from concurrent approve attempts
+    await db.$transaction(async (tx) => {
+      const jobUpdate = await tx.job.updateMany({
+        where: {
+          id: jobId,
+          operatorId: session.user!.id,
+          status: { in: ["OPEN", "IN_PROGRESS"] },
+        },
+        data: { status: "COMPLETED" },
+      });
+
+      if (jobUpdate.count === 0) {
+        throw Object.assign(new Error("Job already completed or not found"), { status: 409 });
+      }
+
+      await tx.submission.update({
+        where: { id: subId },
+        data: { status: "APPROVED" },
+      });
+
+      await tx.bot.update({
+        where: { id: submission.botId },
+        data: {
+          totalEarned: { increment: botEarning },
+          jobsCompleted: { increment: 1 },
+        },
+      });
+
+      await tx.ledger.create({
+        data: {
+          type: "BOT_EARNING",
+          amount: botEarning,
+          description: `Payment for approved submission`,
+          botId: submission.botId,
+          jobId,
+          submissionId: subId,
+        },
+      });
+
+      await tx.ledger.create({
+        data: {
+          type: "PLATFORM_FEE",
+          amount: platformFee,
+          description: `Platform fee (10%)`,
+          jobId,
+          submissionId: subId,
+        },
+      });
+    }, { isolationLevel: "Serializable" });
+  } catch (err: unknown) {
+    if (err instanceof Error && (err as NodeJS.ErrnoException & { status?: number }).status === 409) {
+      return Response.json({ error: err.message }, { status: 409 });
+    }
+    throw err;
+  }
 
   return Response.json({ success: true });
 }
