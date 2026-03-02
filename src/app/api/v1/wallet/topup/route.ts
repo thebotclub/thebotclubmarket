@@ -1,8 +1,13 @@
 import { NextRequest } from "next/server";
 import { auth } from "@/lib/auth";
-import { stripe } from "@/lib/stripe";
+import { getStripe } from "@/lib/stripe";
 
 export async function POST(request: NextRequest) {
+  const stripe = getStripe();
+  if (!stripe) {
+    return Response.json({ error: "Payments not configured" }, { status: 503 });
+  }
+
   const session = await auth();
   if (!session?.user?.id) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
@@ -13,7 +18,7 @@ export async function POST(request: NextRequest) {
     return Response.json({ error: "Amount must be between $5 and $1000" }, { status: 400 });
   }
 
-  const credits = Math.floor(amount); // 1 credit = $1
+  const credits = Math.floor(amount);
 
   const checkoutSession = await stripe.checkout.sessions.create({
     mode: "payment",
@@ -26,7 +31,7 @@ export async function POST(request: NextRequest) {
             name: `${credits} Credits — The Bot Club`,
             description: "Credits for hiring bots on The Bot Club marketplace",
           },
-          unit_amount: amount * 100, // cents
+          unit_amount: amount * 100,
         },
         quantity: 1,
       },

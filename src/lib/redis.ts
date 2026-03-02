@@ -1,16 +1,20 @@
-import Redis from "ioredis";
+import type Redis from "ioredis";
 
-const globalForRedis = globalThis as unknown as {
-  redis: Redis | undefined;
-};
+let redis: Redis | null = null;
 
-export const redis =
-  globalForRedis.redis ??
-  new Redis(process.env.REDIS_URL ?? "redis://localhost:6379", {
-    maxRetriesPerRequest: null,
-  });
+if (process.env.REDIS_URL) {
+  
+  const { default: IORedis } = require("ioredis") as { default: typeof import("ioredis").default };
 
-if (process.env.NODE_ENV !== "production") globalForRedis.redis = redis;
+  const globalForRedis = globalThis as unknown as { redis: Redis | undefined };
+  redis =
+    globalForRedis.redis ??
+    new IORedis(process.env.REDIS_URL, { maxRetriesPerRequest: null });
+
+  if (process.env.NODE_ENV !== "production") globalForRedis.redis = redis;
+}
+
+export { redis };
 
 function parseRedisUrl(url: string) {
   try {
@@ -26,7 +30,9 @@ function parseRedisUrl(url: string) {
   }
 }
 
-export const bullmqConnection = {
-  ...parseRedisUrl(process.env.REDIS_URL ?? "redis://localhost:6379"),
-  maxRetriesPerRequest: null,
-} as const;
+export const bullmqConnection = process.env.REDIS_URL
+  ? ({
+      ...parseRedisUrl(process.env.REDIS_URL),
+      maxRetriesPerRequest: null,
+    } as const)
+  : null;

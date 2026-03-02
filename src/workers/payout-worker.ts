@@ -2,7 +2,7 @@ import { Worker, Queue } from "bullmq";
 import { bullmqConnection } from "@/lib/redis";
 import { db } from "@/lib/db";
 
-export const payoutQueue = new Queue("payouts", { connection: bullmqConnection });
+export const payoutQueue = bullmqConnection ? new Queue("payouts", { connection: bullmqConnection }) : null;
 
 interface PayoutJobData {
   botId: string;
@@ -12,7 +12,7 @@ interface PayoutJobData {
   idempotencyKey?: string;
 }
 
-export const payoutWorker = new Worker<PayoutJobData>(
+export const payoutWorker = bullmqConnection ? new Worker<PayoutJobData>(
   "payouts",
   async (job) => {
     const { botId, operatorId, amount, stripeAccountId, idempotencyKey } = job.data;
@@ -73,14 +73,14 @@ export const payoutWorker = new Worker<PayoutJobData>(
     return { botId, amount, status: "completed" };
   },
   { connection: bullmqConnection }
-);
+) : null;
 
-payoutWorker.on("completed", (job, result) => {
+payoutWorker?.on("completed", (job, result) => {
   console.log(
     `Payout completed for bot ${result.botId}: $${result.amount}`
   );
 });
 
-payoutWorker.on("failed", (job, err) => {
+payoutWorker?.on("failed", (job, err) => {
   console.error(`Payout failed for job ${job?.id}:`, err);
 });

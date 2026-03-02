@@ -2,7 +2,7 @@ import { Worker, Queue } from "bullmq";
 import { bullmqConnection } from "@/lib/redis";
 import { db } from "@/lib/db";
 
-export const qaQueue = new Queue("qa-review", { connection: bullmqConnection });
+export const qaQueue = bullmqConnection ? new Queue("qa-review", { connection: bullmqConnection }) : null;
 
 interface QaJobData {
   submissionId: string;
@@ -73,7 +73,7 @@ Respond with a JSON object: { "score": 0.85, "feedback": "Brief explanation..." 
   };
 }
 
-export const qaWorker = new Worker<QaJobData>(
+export const qaWorker = bullmqConnection ? new Worker<QaJobData>(
   "qa-review",
   async (job) => {
     const { submissionId, jobId } = job.data;
@@ -109,12 +109,12 @@ export const qaWorker = new Worker<QaJobData>(
     return { submissionId, score, status };
   },
   { connection: bullmqConnection }
-);
+) : null;
 
-qaWorker.on("completed", (job, result) => {
+qaWorker?.on("completed", (job, result) => {
   console.log(`QA review completed for submission ${result.submissionId}: score=${result.score}`);
 });
 
-qaWorker.on("failed", (job, err) => {
+qaWorker?.on("failed", (job, err) => {
   console.error(`QA review failed for job ${job?.id}:`, err);
 });

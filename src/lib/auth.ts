@@ -6,6 +6,7 @@ import { db } from "./db";
 import { WELCOME_BONUS_CREDITS } from "./constants";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
+  secret: process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET,
   adapter: PrismaAdapter(db),
   providers: [GitHub, Google],
   pages: {

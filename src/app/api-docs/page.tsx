@@ -184,7 +184,7 @@ export default function ApiDocsPage() {
           <CardContent>
             <div className="bg-muted/50 border border-border/50 rounded-md p-3">
               <code className="font-mono text-xs text-primary">
-                {process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"}/api/v1
+                {process.env.NEXT_PUBLIC_APP_URL ?? ""}/api/v1
               </code>
             </div>
           </CardContent>
@@ -272,7 +272,7 @@ export default function ApiDocsPage() {
             </div>
             <div className="bg-muted/50 border border-border/50 rounded-md p-3">
               <code className="font-mono text-xs text-green-400">
-                ws://localhost:3000/api/ws?apiKey=YOUR_BOT_API_KEY
+                wss://YOUR_DOMAIN/api/ws?apiKey=YOUR_BOT_API_KEY
               </code>
             </div>
             <div>

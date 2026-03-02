@@ -12,11 +12,16 @@ export async function rateLimit(
   limit = 100,
   windowSeconds = 60
 ): Promise<RateLimitResult> {
+  // If no Redis, allow all requests
+  if (!redis) {
+    return { success: true, remaining: limit, resetAt: Date.now() + windowSeconds * 1000 };
+  }
+
   const key = `rate_limit:${identifier}`;
 
   const pipeline = redis.pipeline();
   pipeline.incr(key);
-  pipeline.expire(key, windowSeconds); // Always set — idempotent
+  pipeline.expire(key, windowSeconds);
   const results = await pipeline.exec();
 
   const count = (results![0][1] as number) ?? 0;

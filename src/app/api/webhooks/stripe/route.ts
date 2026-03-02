@@ -1,9 +1,14 @@
 import { NextRequest } from "next/server";
-import { stripe } from "@/lib/stripe";
+import { getStripe } from "@/lib/stripe";
 import { db } from "@/lib/db";
 import type Stripe from "stripe";
 
 export async function POST(request: NextRequest) {
+  const stripe = getStripe();
+  if (!stripe) {
+    return Response.json({ error: "Payments not configured" }, { status: 503 });
+  }
+
   const body = await request.text();
   const signature = request.headers.get("stripe-signature");
 
@@ -34,7 +39,6 @@ export async function POST(request: NextRequest) {
 
       if (!operatorId || !credits) break;
 
-      // SEC-011: Idempotency via @unique stripePaymentId — duplicate webhook = P2002 error
       try {
         await db.$transaction([
           db.operator.update({
@@ -46,7 +50,7 @@ export async function POST(request: NextRequest) {
               amount: credits,
               type: "PURCHASE",
               description: `Stripe purchase: ${credits} credits`,
-              stripePaymentId: paymentIntentId, // @unique — throws P2002 on replay
+              stripePaymentId: paymentIntentId,
               operatorId,
             },
           }),
@@ -60,7 +64,6 @@ export async function POST(request: NextRequest) {
           }),
         ]);
       } catch (err: unknown) {
-        // P2002 = unique constraint violation — this is a duplicate webhook, skip it
         if (
           err instanceof Error &&
           (err as NodeJS.ErrnoException & { code?: string }).code === "P2002"
