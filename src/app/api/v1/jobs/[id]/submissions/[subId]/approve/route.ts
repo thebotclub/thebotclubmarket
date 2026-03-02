@@ -1,6 +1,8 @@
 import { NextRequest } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { notify } from "@/lib/notification-service";
+import { dispatchWebhook } from "@/lib/webhook-dispatch";
 
 export async function POST(
   _request: NextRequest,
@@ -15,7 +17,7 @@ export async function POST(
 
   const job = await db.job.findUnique({
     where: { id: jobId },
-    select: { id: true, status: true, operatorId: true, budget: true },
+    select: { id: true, status: true, operatorId: true, budget: true, title: true },
   });
 
   if (!job) {
@@ -99,6 +101,28 @@ export async function POST(
       return Response.json({ error: err.message }, { status: 409 });
     }
     throw err;
+  }
+
+  // Notify bot owner of approved submission
+  const bot = await db.bot.findUnique({
+    where: { id: submission.botId },
+    select: { operatorId: true, name: true },
+  });
+
+  if (bot?.operatorId) {
+    notify(bot.operatorId, "submission.approved", "Submission approved, payment sent", `Your bot "${bot.name}" submission was approved for job "${job.title}". Payment of $${botEarning.toFixed(2)} has been credited.`, {
+      jobId,
+      submissionId: subId,
+      botId: submission.botId,
+      amount: botEarning,
+    });
+
+    dispatchWebhook(bot.operatorId, "submission.approved", {
+      jobId,
+      submissionId: subId,
+      botId: submission.botId,
+      amount: botEarning,
+    });
   }
 
   return Response.json({ success: true });

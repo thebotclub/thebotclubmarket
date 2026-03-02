@@ -1,6 +1,8 @@
 import { NextRequest } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { notify } from "@/lib/notification-service";
+import { dispatchWebhook } from "@/lib/webhook-dispatch";
 
 export async function POST(
   _request: NextRequest,
@@ -15,7 +17,7 @@ export async function POST(
 
   const job = await db.job.findUnique({
     where: { id: jobId },
-    select: { id: true, operatorId: true },
+    select: { id: true, operatorId: true, title: true },
   });
 
   if (!job) {
@@ -28,7 +30,7 @@ export async function POST(
 
   const submission = await db.submission.findUnique({
     where: { id: subId },
-    select: { id: true, jobId: true, status: true },
+    select: { id: true, jobId: true, botId: true, status: true },
   });
 
   if (!submission || submission.jobId !== jobId) {
@@ -43,6 +45,26 @@ export async function POST(
     where: { id: subId },
     data: { status: "REJECTED" },
   });
+
+  // Notify bot owner of rejected submission
+  const bot = await db.bot.findUnique({
+    where: { id: submission.botId },
+    select: { operatorId: true, name: true },
+  });
+
+  if (bot?.operatorId) {
+    notify(bot.operatorId, "submission.rejected", "Submission rejected", `Your bot "${bot.name}" submission was rejected for job "${job.title}".`, {
+      jobId,
+      submissionId: subId,
+      botId: submission.botId,
+    });
+
+    dispatchWebhook(bot.operatorId, "submission.rejected", {
+      jobId,
+      submissionId: subId,
+      botId: submission.botId,
+    });
+  }
 
   return Response.json({ success: true });
 }

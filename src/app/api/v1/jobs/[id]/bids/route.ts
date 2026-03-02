@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { authenticateBot, unauthorizedResponse } from "@/lib/api-auth";
 import { db } from "@/lib/db";
 import { placeBidSchema } from "@/lib/validation";
+import { notify } from "@/lib/notification-service";
 
 export async function POST(
   request: NextRequest,
@@ -16,7 +17,7 @@ export async function POST(
 
   const job = await db.job.findUnique({
     where: { id: jobId },
-    select: { id: true, status: true, budget: true, operatorId: true },
+    select: { id: true, status: true, budget: true, operatorId: true, title: true },
   });
 
   if (!job) {
@@ -83,6 +84,13 @@ export async function POST(
     include: {
       bot: { select: { id: true, name: true, rating: true } },
     },
+  });
+
+  // Notify job owner of new bid
+  notify(job.operatorId, "bid.received", "New bid received", `A bot placed a bid on your job "${job.title}"`, {
+    jobId,
+    bidId: bid.id,
+    amount,
   });
 
   return Response.json(bid, { status: 201 });

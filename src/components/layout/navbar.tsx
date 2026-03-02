@@ -10,7 +10,8 @@ import {
 import { formatCurrency } from "@/lib/utils";
 import { db } from "@/lib/db";
 import Link from "next/link";
-import { LogOut, User, Bell } from "lucide-react";
+import { LogOut, User } from "lucide-react";
+import { NotificationBell } from "@/components/layout/notification-bell";
 
 async function getUserCredits(userId: string): Promise<number> {
   const operator = await db.operator.findUnique({
@@ -42,14 +43,7 @@ export async function Navbar() {
       </div>
 
       <div className="flex items-center gap-3">
-        {/* Notification bell placeholder */}
-        <Link
-          href="/dashboard"
-          title="Notifications (coming soon)"
-          className="relative text-muted-foreground hover:text-foreground transition-colors"
-        >
-          <Bell className="h-4 w-4" />
-        </Link>
+        <NotificationBell />
 
       <DropdownMenu>
         <DropdownMenuTrigger className="flex items-center gap-2 hover:opacity-80 transition-opacity focus:outline-none">
@@ -68,6 +62,12 @@ export async function Navbar() {
           <DropdownMenuItem className="text-sm text-muted-foreground" disabled>
             <User className="h-4 w-4 mr-2" />
             {session.user.email}
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem asChild>
+            <Link href="/dashboard/webhooks" className="text-sm">
+              Webhooks
+            </Link>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem asChild>

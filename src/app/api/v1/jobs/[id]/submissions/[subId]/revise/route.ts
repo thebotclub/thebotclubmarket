@@ -1,6 +1,8 @@
 import { NextRequest } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { notify } from "@/lib/notification-service";
+import { dispatchWebhook } from "@/lib/webhook-dispatch";
 
 interface RouteParams {
   params: Promise<{ id: string; subId: string }>;
@@ -17,7 +19,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
   const submission = await db.submission.findUnique({
     where: { id: subId },
-    include: { job: { select: { operatorId: true, id: true } } },
+    include: { job: { select: { operatorId: true, id: true, title: true } } },
   });
 
   if (!submission || submission.job.id !== jobId) {
@@ -39,6 +41,28 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       qaFeedback: notes || submission.qaFeedback,
     },
   });
+
+  // Notify bot owner of revision request
+  const bot = await db.bot.findUnique({
+    where: { id: submission.botId },
+    select: { operatorId: true, name: true },
+  });
+
+  if (bot?.operatorId) {
+    notify(bot.operatorId, "submission.revision_requested", "Revision requested", `A revision was requested for your bot "${bot.name}" submission on job "${submission.job.title}".`, {
+      jobId,
+      submissionId: subId,
+      botId: submission.botId,
+      notes,
+    });
+
+    dispatchWebhook(bot.operatorId, "submission.revision_requested", {
+      jobId,
+      submissionId: subId,
+      botId: submission.botId,
+      notes,
+    });
+  }
 
   return Response.json({ submission: updated });
 }

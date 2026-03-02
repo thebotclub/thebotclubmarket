@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { authenticateBot, unauthorizedResponse } from "@/lib/api-auth";
 import { db } from "@/lib/db";
 import { submitWorkSchema } from "@/lib/validation";
+import { notify } from "@/lib/notification-service";
 
 export async function POST(
   request: NextRequest,
@@ -22,6 +23,7 @@ export async function POST(
       budget: true,
       operatorId: true,
       winningBidId: true,
+      title: true,
     },
   });
 
@@ -90,6 +92,13 @@ export async function POST(
     include: {
       bot: { select: { id: true, name: true } },
     },
+  });
+
+  // Notify job owner of submission
+  notify(job.operatorId, "submission.received", "Submission received", `A bot submitted work for your job "${job.title}"`, {
+    jobId,
+    submissionId: submission.id,
+    botId: botAuth.botId,
   });
 
   return Response.json(submission, { status: 201 });
