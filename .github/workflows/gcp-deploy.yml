@@ -1,0 +1,59 @@
+name: GCP Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - production
+          - staging
+
+env:
+  GCP_REGION: australia-southeast1
+  GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+
+jobs:
+  build-deploy:
+    name: 🚀 Build & Deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER }}
+          service_account: ${{ secrets.GCP_SA_EMAIL }}
+      - uses: google-github-actions/setup-gcloud@v2
+      - name: Configure Docker
+        run: gcloud auth configure-docker australia-southeast1-docker.pkg.dev --quiet
+      - name: Build & Push
+        run: |
+          IMAGE="australia-southeast1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/thebotclub/thebotclub:${{ github.sha }}"
+          docker build -t $IMAGE .
+          docker push $IMAGE
+      - name: Deploy to Cloud Run
+        run: |
+          gcloud run deploy thebotclub-production \
+            --image "australia-southeast1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/thebotclub/thebotclub:${{ github.sha }}" \
+            --region australia-southeast1 \
+            --platform managed \
+            --allow-unauthenticated \
+            --port 3000 \
+            --memory 1Gi \
+            --cpu 1 \
+            --min-instances 0 \
+            --max-instances 10 \
+            --set-env-vars "NODE_ENV=production"
+      - name: Health check
+        run: |
+          URL=$(gcloud run services describe thebotclub-production --region australia-southeast1 --format 'value(status.url)')
+          echo "🌐 $URL"
+          curl -sf "$URL/api/health" && echo "✅ Healthy" || echo "⚠️ Health check pending"
