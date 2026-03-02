@@ -1,24 +1,107 @@
 # =============================================================================
-# GCP Module - Cloud Run with Cloud SQL
+# The Bot Club - GCP Module
 # =============================================================================
-# Simplified module for reliability
+# Manages: Cloud SQL, Secret Manager, Cloud Run v2, Service Accounts,
+#          Artifact Registry, Workload Identity Pool for GitHub Actions
+# =============================================================================
 
 locals {
   app_name = "${var.project_name}-${var.environment}"
+
+  app_url = var.custom_domain != "" ? "https://${var.custom_domain}" : "https://${local.app_name}-${var.gcp_project_id}.${var.gcp_region}.run.app"
 }
 
 # =============================================================================
-# Service Account
+# Service Account - Cloud Run runtime
 # =============================================================================
 
 resource "google_service_account" "cloud_run" {
   account_id   = "${local.app_name}-sa"
-  display_name = "Service account for ${local.app_name}"
+  display_name = "Cloud Run service account for ${local.app_name}"
   project      = var.gcp_project_id
 }
 
 # =============================================================================
-# Cloud SQL
+# Service Account - GitHub Actions (existing, imported)
+# =============================================================================
+
+resource "google_service_account" "github_actions" {
+  account_id   = "github-actions"
+  display_name = "GitHub Actions CI/CD"
+  project      = var.gcp_project_id
+}
+
+# =============================================================================
+# Artifact Registry
+# =============================================================================
+
+resource "google_artifact_registry_repository" "app" {
+  repository_id = var.project_name
+  location      = var.gcp_region
+  format        = "DOCKER"
+  description   = "Docker images for ${local.app_name}"
+  project       = var.gcp_project_id
+}
+
+# =============================================================================
+# Workload Identity Pool + Provider (GitHub Actions OIDC)
+# =============================================================================
+
+resource "google_iam_workload_identity_pool" "github" {
+  workload_identity_pool_id = "github-pool"
+  display_name              = "GitHub Actions Pool"
+  description               = "Identity pool for GitHub Actions OIDC authentication"
+  project                   = var.gcp_project_id
+}
+
+resource "google_iam_workload_identity_pool_provider" "github" {
+  workload_identity_pool_id          = google_iam_workload_identity_pool.github.workload_identity_pool_id
+  workload_identity_pool_provider_id = "github-provider"
+  display_name                       = "GitHub Provider"
+  project                            = var.gcp_project_id
+
+  attribute_mapping = {
+    "google.subject"       = "assertion.sub"
+    "attribute.actor"      = "assertion.actor"
+    "attribute.repository" = "assertion.repository"
+    "attribute.ref"        = "assertion.ref"
+  }
+
+  attribute_condition = "assertion.repository == '${var.github_org}/${var.github_repo}'"
+
+  oidc {
+    issuer_uri = "https://token.actions.githubusercontent.com"
+  }
+}
+
+# Allow GitHub Actions to impersonate the github-actions service account
+resource "google_service_account_iam_member" "github_actions_wif" {
+  service_account_id = google_service_account.github_actions.name
+  role               = "roles/iam.workloadIdentityUser"
+  member             = "principalSet://iam.googleapis.com/${google_iam_workload_identity_pool.github.name}/attribute.repository/${var.github_org}/${var.github_repo}"
+}
+
+# GitHub Actions SA permissions
+resource "google_project_iam_member" "github_actions_run_admin" {
+  project = var.gcp_project_id
+  role    = "roles/run.admin"
+  member  = "serviceAccount:${google_service_account.github_actions.email}"
+}
+
+resource "google_project_iam_member" "github_actions_ar_writer" {
+  project = var.gcp_project_id
+  role    = "roles/artifactregistry.writer"
+  member  = "serviceAccount:${google_service_account.github_actions.email}"
+}
+
+resource "google_project_iam_member" "github_actions_sa_user" {
+  project = var.gcp_project_id
+  role    = "roles/iam.serviceAccountUser"
+  member  = "serviceAccount:${google_service_account.github_actions.email}"
+}
+
+# =============================================================================
+# Cloud SQL - PostgreSQL
 # =============================================================================
 
 resource "google_sql_database_instance" "postgres" {
@@ -55,7 +138,7 @@ resource "google_sql_database_instance" "postgres" {
 }
 
 resource "google_sql_database" "app_db" {
-  name     = "botclub"
+  name     = var.project_name
   instance = google_sql_database_instance.postgres.name
   project  = var.gcp_project_id
 }
@@ -67,12 +150,40 @@ resource "google_sql_user" "app_user" {
   project  = var.gcp_project_id
 }
 
+# Grant Cloud Run SA access to Cloud SQL
+resource "google_project_iam_member" "cloud_run_sql_client" {
+  project = var.gcp_project_id
+  role    = "roles/cloudsql.client"
+  member  = "serviceAccount:${google_service_account.cloud_run.email}"
+}
+
 # =============================================================================
-# Secret Manager - Required Secrets
+# Secret Manager
 # =============================================================================
 
+resource "google_secret_manager_secret" "database_url" {
+  secret_id = "database-url"
+  project   = var.gcp_project_id
+
+  replication {
+    user_managed {
+      replicas {
+        location = var.gcp_region
+      }
+    }
+  }
+}
+
+resource "google_secret_manager_secret_version" "database_url" {
+  secret = google_secret_manager_secret.database_url.id
+  # Uses Cloud SQL Auth Proxy socket path format for Cloud Run
+  secret_data = "postgresql://${var.database_username}:${var.database_password}@localhost/${google_sql_database.app_db.name}?host=/cloudsql/${google_sql_database_instance.postgres.connection_name}"
+
+  depends_on = [google_sql_database_instance.postgres, google_sql_database.app_db]
+}
+
 resource "google_secret_manager_secret" "nextauth_secret" {
-  secret_id = "${local.app_name}-nextauth-secret"
+  secret_id = "nextauth-secret"
   project   = var.gcp_project_id
 
   replication {
@@ -86,11 +197,11 @@ resource "google_secret_manager_secret" "nextauth_secret" {
 
 resource "google_secret_manager_secret_version" "nextauth_secret" {
   secret      = google_secret_manager_secret.nextauth_secret.id
-  secret_data = var.nextauth_secret
+  secret_data = var.nextauth_secret != "" ? var.nextauth_secret : "change-me-generate-with-openssl-rand-base64-32"
 }
 
-resource "google_secret_manager_secret" "database_url" {
-  secret_id = "${local.app_name}-database-url"
+resource "google_secret_manager_secret" "stripe_secret_key" {
+  secret_id = "stripe-secret-key"
   project   = var.gcp_project_id
 
   replication {
@@ -102,27 +213,63 @@ resource "google_secret_manager_secret" "database_url" {
   }
 }
 
-resource "google_secret_manager_secret_version" "database_url" {
-  secret      = google_secret_manager_secret.database_url.id
-  # Use Cloud SQL Unix socket connector (not private IP) so Cloud Run can reach
-  # the database without VPC peering. Cloud Run mounts the socket via the
-  # cloud_sql_instances volume below.
-  secret_data = "postgresql://${var.database_username}:${var.database_password}@localhost/${google_sql_database.app_db.name}?host=/cloudsql/${google_sql_database_instance.postgres.connection_name}"
+resource "google_secret_manager_secret_version" "stripe_secret_key" {
+  secret      = google_secret_manager_secret.stripe_secret_key.id
+  secret_data = var.stripe_secret_key != "" ? var.stripe_secret_key : "placeholder"
+}
+
+resource "google_secret_manager_secret" "stripe_webhook_secret" {
+  secret_id = "stripe-webhook-secret"
+  project   = var.gcp_project_id
+
+  replication {
+    user_managed {
+      replicas {
+        location = var.gcp_region
+      }
+    }
+  }
+}
+
+resource "google_secret_manager_secret_version" "stripe_webhook_secret" {
+  secret      = google_secret_manager_secret.stripe_webhook_secret.id
+  secret_data = var.stripe_webhook_secret != "" ? var.stripe_webhook_secret : "placeholder"
 }
 
 # =============================================================================
-# Secret Manager - Optional Secrets (count-based for sensitive values)
+# IAM - Secret access for Cloud Run SA
 # =============================================================================
 
-# Note: Optional secrets stored but not yet exposed to Cloud Run
-# Can be added via post-deployment configuration if needed
+resource "google_secret_manager_secret_iam_member" "run_database_url" {
+  secret_id = google_secret_manager_secret.database_url.id
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${google_service_account.cloud_run.email}"
+}
+
+resource "google_secret_manager_secret_iam_member" "run_nextauth_secret" {
+  secret_id = google_secret_manager_secret.nextauth_secret.id
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${google_service_account.cloud_run.email}"
+}
+
+resource "google_secret_manager_secret_iam_member" "run_stripe_secret_key" {
+  secret_id = google_secret_manager_secret.stripe_secret_key.id
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${google_service_account.cloud_run.email}"
+}
+
+resource "google_secret_manager_secret_iam_member" "run_stripe_webhook_secret" {
+  secret_id = google_secret_manager_secret.stripe_webhook_secret.id
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${google_service_account.cloud_run.email}"
+}
 
 # =============================================================================
-# Cloud Run Service
+# Cloud Run v2 Service
 # =============================================================================
 
 resource "google_cloud_run_v2_service" "app" {
-  name     = local.app_name
+  name     = "${var.project_name}-${var.environment}"
   location = var.gcp_region
   project  = var.gcp_project_id
 
@@ -143,7 +290,13 @@ resource "google_cloud_run_v2_service" "app" {
         }
       }
 
-      # Required env vars from Secret Manager
+      # Cloud SQL Auth Proxy sidecar
+      volume_mounts {
+        name       = "cloudsql"
+        mount_path = "/cloudsql"
+      }
+
+      # Secrets from Secret Manager
       env {
         name = "DATABASE_URL"
         value_source {
@@ -165,141 +318,97 @@ resource "google_cloud_run_v2_service" "app" {
       }
 
       env {
+        name = "STRIPE_SECRET_KEY"
+        value_source {
+          secret_key_ref {
+            secret  = google_secret_manager_secret.stripe_secret_key.secret_id
+            version = "latest"
+          }
+        }
+      }
+
+      env {
+        name = "STRIPE_WEBHOOK_SECRET"
+        value_source {
+          secret_key_ref {
+            secret  = google_secret_manager_secret.stripe_webhook_secret.secret_id
+            version = "latest"
+          }
+        }
+      }
+
+      # Static env vars
+      env {
         name  = "NODE_ENV"
         value = "production"
       }
 
-      # NEXTAUTH_URL and APP_URL - uses custom domain if set, otherwise Cloud Run URL
       env {
         name  = "NEXTAUTH_URL"
-        value = var.custom_domain != "" ? "https://${var.custom_domain}" : "https://${local.app_name}-${var.gcp_project_id}.${var.gcp_region}.run.app"
+        value = local.app_url
       }
 
       env {
         name  = "NEXT_PUBLIC_APP_URL"
-        value = var.custom_domain != "" ? "https://${var.custom_domain}" : "https://${local.app_name}-${var.gcp_project_id}.${var.gcp_region}.run.app"
-      }
-
-      # Subdomain Configuration - REQUIRED for multi-tenant subdomain routing
-      env {
-        name  = "NEXT_PUBLIC_SUBDOMAIN_ENABLED"
-        value = var.custom_domain != "" ? "true" : "false"
+        value = local.app_url
       }
 
       env {
         name  = "NEXT_PUBLIC_BASE_DOMAIN"
         value = var.custom_domain
       }
+    }
 
-      # Cookie domain with leading dot for cross-subdomain session sharing
-      env {
-        name  = "NEXTAUTH_COOKIE_DOMAIN"
-        value = var.custom_domain != "" ? ".${var.custom_domain}" : ""
+    # Cloud SQL Auth Proxy sidecar container
+    containers {
+      image = "gcr.io/cloud-sql-connectors/cloud-sql-proxy:2"
+      args  = ["--structured-logs", "--unix-socket=/cloudsql", google_sql_database_instance.postgres.connection_name]
+
+      resources {
+        limits = {
+          cpu    = "0.5"
+          memory = "128Mi"
+        }
       }
 
-      env {
-        name  = "AUTH_URL"
-        value = var.custom_domain != "" ? "https://${var.custom_domain}" : "https://${local.app_name}-${var.gcp_project_id}.${var.gcp_region}.run.app"
-      }
-
-      # M8: OAuth and payment secrets passed to Cloud Run
-      env {
-        name  = "GOOGLE_CLIENT_ID"
-        value = var.google_client_id
-      }
-
-      env {
-        name  = "GOOGLE_CLIENT_SECRET"
-        value = var.google_client_secret
-      }
-
-      env {
-        name  = "GITHUB_ID"
-        value = var.github_client_id
-      }
-
-      env {
-        name  = "GITHUB_SECRET"
-        value = var.github_client_secret
-      }
-
-      env {
-        name  = "STRIPE_SECRET_KEY"
-        value = var.stripe_secret_key
-      }
-
-      env {
-        name  = "STRIPE_WEBHOOK_SECRET"
-        value = var.stripe_webhook_secret
-      }
-
-      env {
-        name  = "OPENAI_API_KEY"
-        value = var.openai_api_key
-      }
-
-      # M7: Mount Cloud SQL socket so the DATABASE_URL can use the Unix socket connector
       volume_mounts {
         name       = "cloudsql"
         mount_path = "/cloudsql"
       }
     }
 
-    # M7: Cloud SQL socket volume — Cloud Run manages the Cloud SQL Auth Proxy
     volumes {
       name = "cloudsql"
-      cloud_sql_instance {
-        instances = [google_sql_database_instance.postgres.connection_name]
-      }
+      empty_dir {}
+    }
+
+    scaling {
+      min_instance_count = 1
+      max_instance_count = 10
     }
 
     timeout = "300s"
-
-    scaling {
-      max_instance_count = 100
-      min_instance_count = 1
-    }
   }
 
   depends_on = [
     google_sql_database.app_db,
     google_sql_user.app_user,
+    google_secret_manager_secret_version.database_url,
     google_secret_manager_secret_version.nextauth_secret,
-    google_secret_manager_secret_version.database_url
+    google_secret_manager_secret_version.stripe_secret_key,
+    google_secret_manager_secret_version.stripe_webhook_secret,
+    google_secret_manager_secret_iam_member.run_database_url,
+    google_secret_manager_secret_iam_member.run_nextauth_secret,
+    google_secret_manager_secret_iam_member.run_stripe_secret_key,
+    google_secret_manager_secret_iam_member.run_stripe_webhook_secret,
   ]
 }
 
 # =============================================================================
-# IAM - Secret Access
+# IAM - Public invoker for Cloud Run
 # =============================================================================
 
-# M7: Grant Cloud SQL client role so the Cloud Run service account can connect
-resource "google_project_iam_member" "cloud_run_sql_client" {
-  project = var.gcp_project_id
-  role    = "roles/cloudsql.client"
-  member  = "serviceAccount:${google_service_account.cloud_run.email}"
-}
-
-resource "google_secret_manager_secret_iam_member" "nextauth_access" {
-  secret_id = google_secret_manager_secret.nextauth_secret.id
-  role      = "roles/secretmanager.secretAccessor"
-  member    = "serviceAccount:${google_service_account.cloud_run.email}"
-}
-
-resource "google_secret_manager_secret_iam_member" "database_url_access" {
-  secret_id = google_secret_manager_secret.database_url.id
-  role      = "roles/secretmanager.secretAccessor"
-  member    = "serviceAccount:${google_service_account.cloud_run.email}"
-}
-
-# Optional secret IAM bindings removed - using count-based approach
-# Add individual IAM bindings here if optional secrets are needed
-
-# =============================================================================
-# Cloud Run IAM - Public Access
-# =============================================================================
-
-resource "google_cloud_run_v2_service_iam_member" "public" {
+resource "google_cloud_run_v2_service_iam_member" "public_invoker" {
   location = google_cloud_run_v2_service.app.location
   name     = google_cloud_run_v2_service.app.name
   role     = "roles/run.invoker"
@@ -314,7 +423,19 @@ output "application_url" {
   value = google_cloud_run_v2_service.app.uri
 }
 
-output "database_host" {
-  value     = google_sql_database_instance.postgres.private_ip_address
+output "database_connection_name" {
+  value     = google_sql_database_instance.postgres.connection_name
   sensitive = true
+}
+
+output "artifact_registry_url" {
+  value = "${var.gcp_region}-docker.pkg.dev/${var.gcp_project_id}/${google_artifact_registry_repository.app.repository_id}"
+}
+
+output "workload_identity_provider" {
+  value = google_iam_workload_identity_pool_provider.github.name
+}
+
+output "github_actions_service_account" {
+  value = google_service_account.github_actions.email
 }
