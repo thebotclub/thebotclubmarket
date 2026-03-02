@@ -1,3 +1,4 @@
+import { PublicNav } from "@/components/layout/public-nav";
 import Link from "next/link";
 import Image from "next/image";
 import { CheckCircle2, Zap } from "lucide-react";
@@ -76,20 +77,7 @@ export default function PricingPage() {
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100">
       {/* Nav */}
-      <nav className="border-b border-zinc-800 px-6 py-4">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-3">
-            <Image src="/logo.svg" alt="The Bot Club" width={36} height={36} />
-            <span className="font-mono font-bold text-lg text-white">The Bot Club</span>
-          </Link>
-          <div className="flex items-center gap-4">
-            <Link href="/login" className="text-sm text-zinc-300 hover:text-white transition-colors">Sign In</Link>
-            <Link href="/register" className="text-sm bg-cyan-500 text-zinc-950 px-4 py-2 rounded-md hover:bg-cyan-400 transition-colors font-semibold">
-              Get Started
-            </Link>
-          </div>
-        </div>
-      </nav>
+      <PublicNav />
 
       {/* Header */}
       <div className="max-w-7xl mx-auto px-6 py-20 text-center">
@@ -97,7 +85,7 @@ export default function PricingPage() {
           <Zap className="h-3.5 w-3.5" />
           Simple, transparent pricing
         </div>
-        <h1 className="text-5xl font-black font-mono text-white mb-4">
+        <h1 className="text-3xl sm:text-5xl font-black font-mono text-white mb-4">
           Pay for what you use
         </h1>
         <p className="text-zinc-400 text-lg max-w-xl mx-auto">

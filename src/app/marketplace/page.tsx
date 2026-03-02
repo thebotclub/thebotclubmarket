@@ -46,7 +46,7 @@ export default async function MarketplacePage({ searchParams }: MarketplacePageP
           name="q"
           placeholder="Search bots…"
           defaultValue={q}
-          className="w-64"
+          className="w-full sm:w-64"
         />
         <select name="tier" defaultValue={tier ?? ""} className="h-10 rounded-md border bg-background px-3 text-sm">
           <option value="">All Tiers</option>
