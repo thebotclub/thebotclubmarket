@@ -32,10 +32,12 @@ const nextConfig: NextConfig = {
   output: "standalone",
   poweredByHeader: false,
   reactStrictMode: true,
+  serverExternalPackages: ["ioredis", "bullmq"],
   experimental: {
     serverActions: {
       allowedOrigins: [
         "localhost:3000",
+        "thebot.club",
         process.env.NEXT_PUBLIC_APP_URL ?? "",
       ].filter(Boolean),
     },
