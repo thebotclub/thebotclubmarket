@@ -1,0 +1,134 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#070D17"/>
+      <stop offset="100%" stop-color="#0C1825"/>
+    </linearGradient>
+    <radialGradient id="bgGlow" cx="50%" cy="52%" r="40%">
+      <stop offset="0%" stop-color="#003D52" stop-opacity="0.6"/>
+      <stop offset="100%" stop-color="#070D17" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="headGrad" x1="15%" y1="0%" x2="85%" y2="100%">
+      <stop offset="0%" stop-color="#1A3348"/>
+      <stop offset="100%" stop-color="#091520"/>
+    </linearGradient>
+    <linearGradient id="rimGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#60C8E0"/>
+      <stop offset="50%" stop-color="#00D4FF"/>
+      <stop offset="100%" stop-color="#006A80"/>
+    </linearGradient>
+    <linearGradient id="visorGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#00D4FF" stop-opacity="0"/>
+      <stop offset="20%" stop-color="#00D4FF" stop-opacity="0.9"/>
+      <stop offset="50%" stop-color="#7EEEFF"/>
+      <stop offset="80%" stop-color="#00D4FF" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#00D4FF" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="antennaGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#00D4FF"/>
+      <stop offset="100%" stop-color="#005F75"/>
+    </linearGradient>
+    <filter id="visorGlow" x="-60%" y="-300%" width="220%" height="700%">
+      <feGaussianBlur stdDeviation="9" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="rimGlow" x="-10%" y="-10%" width="120%" height="120%">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="antennaGlow" x="-100%" y="-50%" width="300%" height="200%">
+      <feGaussianBlur stdDeviation="5" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="dotGlow">
+      <feGaussianBlur stdDeviation="2.5" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="400" height="400" fill="url(#bgGrad)" rx="44"/>
+  <!-- Radial depth glow behind head -->
+  <ellipse cx="200" cy="205" rx="140" ry="130" fill="url(#bgGlow)"/>
+
+  <!-- Subtle grid -->
+  <g stroke="#00D4FF" stroke-opacity="0.03" stroke-width="1">
+    <line x1="0" y1="100" x2="400" y2="100"/><line x1="0" y1="200" x2="400" y2="200"/>
+    <line x1="0" y1="300" x2="400" y2="300"/><line x1="100" y1="0" x2="100" y2="400"/>
+    <line x1="200" y1="0" x2="200" y2="400"/><line x1="300" y1="0" x2="300" y2="400"/>
+  </g>
+
+  <!-- Outer hex orbit ring -->
+  <polygon points="200,44 346,122 346,278 200,356 54,278 54,122"
+    fill="none" stroke="#00D4FF" stroke-width="0.8" stroke-opacity="0.12"/>
+
+  <!-- Hex corner tick marks -->
+  <g stroke="#00D4FF" stroke-width="2.5" stroke-linecap="round" opacity="0.5" filter="url(#rimGlow)">
+    <line x1="200" y1="44" x2="212" y2="51"/><line x1="200" y1="44" x2="188" y2="51"/>
+    <line x1="346" y1="122" x2="338" y2="136"/>
+    <line x1="346" y1="278" x2="338" y2="264"/>
+    <line x1="200" y1="356" x2="212" y2="349"/><line x1="200" y1="356" x2="188" y2="349"/>
+    <line x1="54" y1="278" x2="62" y2="264"/>
+    <line x1="54" y1="122" x2="62" y2="136"/>
+  </g>
+
+  <!-- Neck -->
+  <rect x="183" y="278" width="34" height="18" rx="5" fill="#091825" stroke="#00D4FF" stroke-width="1" stroke-opacity="0.35"/>
+  <rect x="190" y="274" width="20" height="6" rx="3" fill="#00D4FF" opacity="0.25"/>
+
+  <!-- Head shadow/depth -->
+  <polygon points="200,108 268,146 268,258 200,296 132,258 132,146"
+    fill="#040A12" opacity="0.5" transform="translate(3,5)"/>
+
+  <!-- Head body -->
+  <polygon points="200,108 268,146 268,258 200,296 132,258 132,146"
+    fill="url(#headGrad)"/>
+
+  <!-- Chrome rim — outer stroke with glow -->
+  <polygon points="200,108 268,146 268,258 200,296 132,258 132,146"
+    fill="none" stroke="url(#rimGrad)" stroke-width="2" filter="url(#rimGlow)"/>
+
+  <!-- Inner face recess panel -->
+  <rect x="148" y="158" width="104" height="108" rx="10" fill="#040C14" stroke="#00D4FF" stroke-width="0.8" stroke-opacity="0.2"/>
+
+  <!-- Antenna stem -->
+  <rect x="195" y="82" width="10" height="28" rx="5" fill="url(#antennaGrad)" filter="url(#antennaGlow)"/>
+  <!-- Antenna top - diamond shape -->
+  <polygon points="200,68 209,78 200,88 191,78" fill="#00D4FF" filter="url(#antennaGlow)"/>
+  <polygon points="200,71 206,78 200,85 194,78" fill="#7EEEFF"/>
+
+  <!-- Side panel vents -->
+  <g opacity="0.45">
+    <rect x="130" y="178" width="14" height="3" rx="1.5" fill="#00D4FF"/>
+    <rect x="130" y="185" width="10" height="2.5" rx="1.25" fill="#00D4FF" opacity="0.6"/>
+    <rect x="130" y="191" width="12" height="2.5" rx="1.25" fill="#00D4FF" opacity="0.4"/>
+    <rect x="256" y="178" width="14" height="3" rx="1.5" fill="#00D4FF"/>
+    <rect x="260" y="185" width="10" height="2.5" rx="1.25" fill="#00D4FF" opacity="0.6"/>
+    <rect x="258" y="191" width="12" height="2.5" rx="1.25" fill="#00D4FF" opacity="0.4"/>
+  </g>
+
+  <!-- VISOR — the hero element -->
+  <!-- Visor shadow/depth backing -->
+  <rect x="152" y="192" width="96" height="24" rx="5" fill="#000810"/>
+  <!-- Main visor glow -->
+  <rect x="152" y="192" width="96" height="24" rx="5" fill="url(#visorGrad)" filter="url(#visorGlow)"/>
+  <!-- Visor bright center line -->
+  <rect x="160" y="202" width="80" height="3" rx="1.5" fill="white" opacity="0.5"/>
+  <!-- Visor reflection top -->
+  <rect x="158" y="194" width="84" height="5" rx="2" fill="white" opacity="0.08"/>
+
+  <!-- Status indicator dots — bottom of face panel -->
+  <g filter="url(#dotGlow)">
+    <!-- Active (bright) -->
+    <circle cx="172" cy="238" r="5" fill="#00D4FF" opacity="1"/>
+    <!-- Standby (medium) -->
+    <circle cx="188" cy="238" r="4" fill="#00D4FF" opacity="0.45"/>
+    <!-- Standby -->
+    <circle cx="203" cy="238" r="4" fill="#00D4FF" opacity="0.45"/>
+    <!-- Active (bright) -->
+    <circle cx="218" cy="238" r="5" fill="#00D4FF" opacity="1"/>
+    <!-- Pulse dot — center -->
+    <circle cx="232" cy="238" r="3" fill="#00D4FF" opacity="0.25"/>
+  </g>
+
+</svg>
