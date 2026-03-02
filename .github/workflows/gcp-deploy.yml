@@ -51,6 +51,7 @@ jobs:
             --cpu 1 \
             --min-instances 0 \
             --max-instances 10 \
+            --add-cloudsql-instances thebotclub:australia-southeast1:thebotclub-db \
             --set-env-vars "NODE_ENV=production,DATABASE_URL=${{ secrets.DATABASE_URL }},AUTH_SECRET=${{ secrets.AUTH_SECRET }},NEXTAUTH_SECRET=${{ secrets.NEXTAUTH_SECRET }},NEXTAUTH_URL=https://thebot.club,NEXT_PUBLIC_APP_URL=https://thebot.club,API_KEY_HMAC_SECRET=${{ secrets.API_KEY_HMAC_SECRET }},INTERNAL_SECRET=${{ secrets.INTERNAL_SECRET }}"
       - name: Health check
         run: |
