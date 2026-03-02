@@ -16,6 +16,10 @@ model Operator {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
+  // Sprint 2: role and onboarding
+  role               String  @default("BUYER") // BUYER, DEVELOPER, BOTH, ADMIN
+  onboardingComplete Boolean @default(false)
+
   // Auth
   accounts      Account[]
   sessions      Session[]
@@ -29,6 +33,10 @@ model Operator {
   creditBalance      Decimal            @default(0) @db.Decimal(12, 2)
   creditTransactions CreditTransaction[]
   ledgerEntries      Ledger[]
+
+  // Sprint 2: webhooks and notifications
+  webhooks      Webhook[]
+  notifications Notification[]
 }
 
 model Account {
@@ -83,6 +91,11 @@ model Bot {
   totalEarned   Decimal  @default(0) @db.Decimal(12, 2)
   isActive      Boolean  @default(true)
 
+  // Sprint 2: bot performance and integration fields
+  webhookUrl      String?
+  responseTimeAvg Int?            // average response time in ms
+  completionRate  Decimal?        @db.Decimal(5, 4) // 0.0000 to 1.0000
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -90,6 +103,9 @@ model Bot {
   submissions   Submission[]
   ratings       Rating[]
   ledgerEntries Ledger[]
+
+  // Sprint 2: bot capabilities
+  capabilities  BotCapability[]
 
   @@index([operatorId])
   @@index([isActive])
@@ -105,12 +121,18 @@ model Job {
   deadline    DateTime
   status      JobStatus @default(OPEN)
 
+  // Sprint 2: additional job fields
+  cancellationReason String? @db.Text
+
   operatorId String
   operator   Operator @relation(fields: [operatorId], references: [id])
 
   bids        Bid[]
   submissions Submission[]
   ratings     Rating[]
+
+  // Sprint 2: messaging
+  messages    Message[]
 
   winningBidId String?
 
@@ -251,4 +273,106 @@ enum CreditType {
   SPEND
   REFUND
   BONUS
+}
+
+// ─── Sprint 2: New Models ──────────────────────────────────────────────────────
+
+/// Outbound webhooks registered by operators to receive event notifications.
+model Webhook {
+  id        String   @id @default(cuid())
+  userId    String   // references Operator.id
+  url       String
+  events    String[] // e.g. ["job.created", "bid.accepted"]
+  secret    String   // HMAC secret for signing deliveries
+  active    Boolean  @default(true)
+  failCount Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user       Operator         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deliveries WebhookDelivery[]
+
+  @@index([userId])
+}
+
+/// Individual delivery attempts for a webhook event.
+model WebhookDelivery {
+  id          String    @id @default(cuid())
+  webhookId   String
+  event       String
+  payload     Json
+  statusCode  Int?
+  response    String?   @db.Text
+  attempts    Int       @default(0)
+  maxAttempts Int       @default(5)
+  nextRetryAt DateTime?
+  deliveredAt DateTime?
+  createdAt   DateTime  @default(now())
+
+  webhook Webhook @relation(fields: [webhookId], references: [id], onDelete: Cascade)
+
+  @@index([webhookId])
+  @@index([nextRetryAt])
+}
+
+/// In-app notifications delivered to operators.
+model Notification {
+  id        String    @id @default(cuid())
+  userId    String    // references Operator.id
+  type      String    // e.g. "bid.received", "submission.approved"
+  title     String
+  body      String
+  data      Json?     // extra payload
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user Operator @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt])
+  @@index([createdAt])
+}
+
+/// Job-scoped messaging between operators and bots.
+model Message {
+  id         String    @id @default(cuid())
+  jobId      String
+  senderId   String
+  senderType String    // "USER" (Operator) or "BOT"
+  content    String    @db.Text
+  readAt     DateTime?
+  createdAt  DateTime  @default(now())
+
+  job Job @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@index([jobId, createdAt])
+}
+
+/// Immutable audit trail of important system actions.
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String?  // references Operator.id (nullable for system actions)
+  action     String   // e.g. "credit.escrow", "job.cancel", "bid.accept"
+  resource   String   // e.g. "job", "submission", "wallet"
+  resourceId String?
+  metadata   Json?
+  ipAddress  String?
+  createdAt  DateTime @default(now())
+
+  @@index([userId])
+  @@index([resource, resourceId])
+  @@index([createdAt])
+}
+
+/// Categorised skill capabilities for a Bot.
+model BotCapability {
+  id          String   @id @default(cuid())
+  botId       String
+  category    String
+  skills      String[]
+  description String?  @db.Text
+
+  bot Bot @relation(fields: [botId], references: [id], onDelete: Cascade)
+
+  @@index([botId])
+  @@index([category])
 }

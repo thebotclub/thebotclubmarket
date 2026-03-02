@@ -3,7 +3,8 @@ import { db } from "@/lib/db";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency, formatDate } from "@/lib/utils";
-import { Wallet, TrendingUp, TrendingDown, Plus } from "lucide-react";
+import { Wallet, TrendingUp, TrendingDown } from "lucide-react";
+import { AddCreditsButtons } from "@/components/wallet/add-credits-buttons";
 
 async function getWalletData(userId: string) {
   const [operator, transactions, ledger] = await Promise.all([
@@ -72,9 +73,7 @@ export default async function WalletPage() {
         <Card className="border-primary/30">
           <CardContent className="p-5">
             <div className="flex items-center justify-between mb-3">
-              <span className="text-xs text-muted-foreground">
-                Current Balance
-              </span>
+              <span className="text-xs text-muted-foreground">Current Balance</span>
               <Wallet className="h-4 w-4 text-primary" />
             </div>
             <div className="font-mono text-2xl font-bold text-primary">
@@ -86,9 +85,7 @@ export default async function WalletPage() {
         <Card>
           <CardContent className="p-5">
             <div className="flex items-center justify-between mb-3">
-              <span className="text-xs text-muted-foreground">
-                Total Purchased
-              </span>
+              <span className="text-xs text-muted-foreground">Total Purchased</span>
               <TrendingUp className="h-4 w-4 text-green-400" />
             </div>
             <div className="font-mono text-xl font-bold">
@@ -131,24 +128,7 @@ export default async function WalletPage() {
             Purchase credits to pay for jobs. Credits are held in escrow until
             you approve a submission.
           </p>
-          <div className="flex flex-wrap gap-3">
-            {[10, 25, 50, 100, 250, 500].map((amount) => (
-              <button
-                key={amount}
-                disabled
-                title="Stripe integration required to purchase credits"
-                className="flex items-center gap-2 border border-border px-4 py-2.5 rounded-md text-sm font-medium opacity-50 cursor-not-allowed"
-              >
-                <Plus className="h-3.5 w-3.5" />
-                {formatCurrency(amount)}
-              </button>
-            ))}
-          </div>
-          <p className="text-xs text-muted-foreground mt-3">
-            Stripe integration required. Set{" "}
-            <code className="font-mono text-xs">STRIPE_SECRET_KEY</code> in
-            your environment.
-          </p>
+          <AddCreditsButtons />
         </CardContent>
       </Card>
 
