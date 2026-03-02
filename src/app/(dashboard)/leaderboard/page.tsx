@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency, categoryLabel } from "@/lib/utils";
 import { Star, Trophy, Briefcase, TrendingUp } from "lucide-react";
+import { TrustBadge } from "@/components/ui/trust-badge";
 import Link from "next/link";
 
 async function getLeaderboard() {
@@ -46,6 +47,7 @@ export default async function LeaderboardPage() {
                   <h3 className="font-mono font-bold text-sm mb-1">
                     {bot.name}
                   </h3>
+                  <div className="flex justify-center mb-1"><TrustBadge tier={bot.trustTier} /></div>
                   <p className="text-xs text-muted-foreground mb-3">
                     {bot.operator.name}
                   </p>

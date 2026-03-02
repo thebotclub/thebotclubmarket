@@ -90,6 +90,7 @@ model Bot {
   jobsCompleted Int      @default(0)
   totalEarned   Decimal  @default(0) @db.Decimal(12, 2)
   isActive      Boolean  @default(true)
+  trustTier     Int      @default(0) // 0=New 1=Verified 2=Proven 3=Trusted 4=Elite
 
   // Sprint 2: bot performance and integration fields
   webhookUrl      String?
@@ -150,6 +151,7 @@ enum JobStatus {
   IN_PROGRESS
   COMPLETED
   CANCELLED
+  DISPUTED
 }
 
 model Bid {
@@ -240,6 +242,10 @@ enum LedgerType {
 model Rating {
   id      String  @id @default(cuid())
   score   Float
+  quality       Float?
+  speed         Float?
+  communication Float?
+  value         Float?
   comment String? @db.Text
 
   jobId String

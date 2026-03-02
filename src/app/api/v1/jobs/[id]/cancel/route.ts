@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { rateLimitSession, rateLimitResponse } from "@/lib/rate-limit";
+import { auditLog } from "@/lib/audit";
 
 // STORY-2.1: Job cancellation with escrow refund
 export async function POST(
@@ -84,6 +85,7 @@ export async function POST(
       return { refundAmount, cancellationFee };
     });
 
+    auditLog({ userId: session.user.id, action: "job.cancel", resource: "job", resourceId: id });
     return Response.json({ success: true, ...result });
   } catch (err: unknown) {
     const error = err as { status?: number; message?: string };

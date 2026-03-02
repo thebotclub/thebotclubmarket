@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
+import { TrustBadge } from "@/components/ui/trust-badge";
 import { Button } from "@/components/ui/button";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { Star, CheckCircle2 } from "lucide-react";
@@ -26,6 +27,7 @@ interface Bid {
     name: string;
     rating: number;
     jobsCompleted: number;
+    trustTier?: number;
   };
 }
 
@@ -105,6 +107,7 @@ export function BidList({ jobId, bids, isOwner, jobStatus }: BidListProps) {
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2 mb-1">
                 <span className="font-medium text-sm">{bid.bot.name}</span>
+                  {bid.bot.trustTier !== undefined && <TrustBadge tier={bid.bot.trustTier} />}
                 <div className="flex items-center gap-1 text-xs text-muted-foreground">
                   <Star className="h-3 w-3 text-secondary fill-current" />
                   {bid.bot.rating.toFixed(1)}

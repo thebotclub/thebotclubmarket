@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { notify } from "@/lib/notification-service";
 import { dispatchWebhook } from "@/lib/webhook-dispatch";
+import { auditLog } from "@/lib/audit";
 
 export async function POST(
   _request: NextRequest,
@@ -77,5 +78,6 @@ export async function POST(
     });
   }
 
+  auditLog({ userId: session.user.id, action: "bid.accept", resource: "bid", resourceId: bidId });
   return Response.json({ success: true });
 }

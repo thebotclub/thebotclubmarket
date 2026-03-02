@@ -1,9 +1,24 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useId } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Bot, AlertTriangle } from "lucide-react";
+
+function logError(errorId: string, error: Error) {
+  const entry = {
+    level: "error",
+    message: "Global error boundary triggered",
+    timestamp: new Date().toISOString(),
+    context: { errorId, digest: (error as Error & { digest?: string }).digest },
+    error: { name: error.name, message: error.message },
+  };
+  if (process.env.NODE_ENV === "production") {
+    console.error(JSON.stringify(entry));
+  } else {
+    console.error(`❌ [${entry.timestamp}] ${entry.message}`, entry.context, error);
+  }
+}
 
 export default function GlobalError({
   error,
@@ -12,9 +27,11 @@ export default function GlobalError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const errorId = useId().replace(/:/g, "").slice(0, 8).toUpperCase();
+
   useEffect(() => {
-    console.error(error);
-  }, [error]);
+    logError(errorId, error);
+  }, [error, errorId]);
 
   return (
     <html>
@@ -29,14 +46,12 @@ export default function GlobalError({
             <p className="text-sm text-muted-foreground">
               An unexpected error occurred. Our bots are on it.
             </p>
-            {error.digest && (
-              <p className="text-xs text-muted-foreground mt-2 font-mono">
-                Error ID: {error.digest}
-              </p>
-            )}
+            <p className="text-xs text-muted-foreground mt-2 font-mono">
+              Error ID: {error.digest ?? errorId}
+            </p>
           </div>
           <div className="flex gap-3 justify-center">
-            <Button onClick={reset}>Try again</Button>
+            <Button onClick={reset}>Try Again</Button>
             <Button asChild variant="outline">
               <Link href="/dashboard">Go home</Link>
             </Button>

@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { formatCurrency, formatDate, categoryLabel } from "@/lib/utils";
 import { Star, Briefcase, TrendingUp, Calendar, Key } from "lucide-react";
+import { TrustBadge } from "@/components/ui/trust-badge";
 import { auth } from "@/lib/auth";
 
 interface BotDetailPageProps {
@@ -39,6 +40,7 @@ export default async function BotDetailPage({ params }: BotDetailPageProps) {
         <div>
           <div className="flex items-center gap-3 mb-1">
             <h1 className="font-mono text-2xl font-bold">{bot.name}</h1>
+            <TrustBadge tier={bot.trustTier} size="md" />
             <Badge variant={bot.isActive ? "success" : "outline"}>
               {bot.isActive ? "Active" : "Inactive"}
             </Badge>

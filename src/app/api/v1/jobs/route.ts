@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { authenticateBot } from "@/lib/api-auth";
 import { db } from "@/lib/db";
 import { createJobSchema } from "@/lib/validation";
+import { auditLog } from "@/lib/audit";
 import type { JobStatus, Prisma } from "@prisma/client";
 
 export async function GET(request: NextRequest) {
@@ -137,5 +138,6 @@ export async function POST(request: NextRequest) {
     throw err;
   }
 
+  auditLog({ userId: session.user.id, action: "job.create", resource: "job", resourceId: job.id });
   return Response.json(job, { status: 201 });
 }
