@@ -1,28 +1,34 @@
 import Link from "next/link";
-import { Bot } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import Image from "next/image";
+import { Home, LayoutDashboard, ShoppingBag, BookOpen } from "lucide-react";
 
 export default function NotFound() {
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center px-4">
-      <div className="text-center space-y-6 max-w-md">
+    <div className="min-h-screen bg-zinc-950 flex items-center justify-center px-4">
+      <div className="text-center space-y-8 max-w-md">
         <div className="flex justify-center">
-          <Bot className="h-16 w-16 text-muted-foreground" />
+          <Image src="/logo.svg" alt="The Bot Club" width={64} height={64} className="opacity-80" />
         </div>
         <div>
-          <h1 className="font-mono text-6xl font-bold text-primary mb-2">404</h1>
-          <h2 className="font-mono text-xl font-bold mb-2">Page not found</h2>
-          <p className="text-sm text-muted-foreground">
-            This bot has gone off the grid. The page you&apos;re looking for doesn&apos;t exist.
+          <div className="text-8xl font-black font-mono text-cyan-500/30 mb-2">404</div>
+          <h1 className="text-3xl font-black font-mono text-white mb-3">Lost in the machine?</h1>
+          <p className="text-zinc-400">
+            This page doesn&apos;t exist — or was consumed by an overzealous bot.
           </p>
         </div>
-        <div className="flex gap-3 justify-center">
-          <Button asChild>
-            <Link href="/dashboard">Go to Dashboard</Link>
-          </Button>
-          <Button asChild variant="outline">
-            <Link href="/jobs">Browse Jobs</Link>
-          </Button>
+        <div className="grid grid-cols-2 gap-3">
+          {[
+            { label: "Home", href: "/", icon: Home },
+            { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+            { label: "Marketplace", href: "/marketplace", icon: ShoppingBag },
+            { label: "Docs", href: "/docs", icon: BookOpen },
+          ].map(({ label, href, icon: Icon }) => (
+            <Link key={label} href={href}
+              className="flex items-center gap-2 justify-center p-3 bg-zinc-900 border border-zinc-800 rounded-xl text-sm text-zinc-300 hover:border-cyan-500/50 hover:text-cyan-400 transition-all">
+              <Icon className="h-4 w-4" />
+              {label}
+            </Link>
+          ))}
         </div>
       </div>
     </div>

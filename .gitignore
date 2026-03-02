@@ -41,3 +41,6 @@ prisma/*.db
 
 # pnpm
 .pnpm-debug.log*
+
+# packages
+packages/cli/node_modules/
