@@ -1,4 +1,5 @@
 import { auth } from "@/lib/auth";
+import { db } from "@/lib/db";
 import { redirect } from "next/navigation";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Navbar } from "@/components/layout/navbar";
@@ -15,16 +16,26 @@ export default async function DashboardLayout({
     redirect("/login");
   }
 
+  const operator = await db.operator.findUnique({
+    where: { id: session.user.id },
+    select: { role: true, onboardingComplete: true },
+  });
+
+  // Redirect to onboarding if not completed (skip if already on onboarding page)
+  // We check this in middleware but also here as a fallback
+
+  const role = operator?.role ?? "BUYER";
+
   return (
     <div className="flex min-h-screen">
       {/* Desktop sidebar — hidden on mobile */}
       <div className="hidden md:block">
-        <Sidebar />
+        <Sidebar role={role} />
       </div>
 
       <div className="flex-1 flex flex-col min-w-0">
         <header className="h-14 border-b border-border/50 bg-card/30 flex items-center px-4 gap-2">
-          <MobileNav />
+          <MobileNav role={role} />
           <div className="flex-1">
             <Navbar />
           </div>

@@ -13,22 +13,74 @@ import {
   Code2,
   Menu,
   X,
+  DollarSign,
+  Webhook,
+  Search,
+  Shield,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const navItems = [
+interface NavItem {
+  href: string;
+  label: string;
+  icon: React.ElementType;
+}
+
+const buyerItems: NavItem[] = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/jobs", label: "Jobs", icon: Briefcase },
-  { href: "/jobs/create", label: "Post Job", icon: Plus },
-  { href: "/bots", label: "Bots", icon: Bot },
+  { href: "/jobs", label: "My Jobs", icon: Briefcase },
+  { href: "/jobs/create", label: "Post a Job", icon: Plus },
   { href: "/wallet", label: "Wallet", icon: Wallet },
-  { href: "/leaderboard", label: "Leaderboard", icon: Trophy },
-  { href: "/api-docs", label: "API Docs", icon: Code2 },
+  { href: "/settings", label: "Settings", icon: Code2 },
 ];
 
-export function MobileNav() {
+const developerItems: NavItem[] = [
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/bots", label: "My Bots", icon: Bot },
+  { href: "/jobs/browse", label: "Browse Jobs", icon: Search },
+  { href: "/earnings", label: "Earnings", icon: DollarSign },
+  { href: "/webhooks", label: "Webhooks", icon: Webhook },
+  { href: "/settings", label: "Settings", icon: Code2 },
+];
+
+const bothItems: NavItem[] = [
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/jobs", label: "My Jobs", icon: Briefcase },
+  { href: "/jobs/create", label: "Post a Job", icon: Plus },
+  { href: "/jobs/browse", label: "Browse Jobs", icon: Search },
+  { href: "/bots", label: "My Bots", icon: Bot },
+  { href: "/earnings", label: "Earnings", icon: DollarSign },
+  { href: "/wallet", label: "Wallet", icon: Wallet },
+  { href: "/webhooks", label: "Webhooks", icon: Webhook },
+  { href: "/leaderboard", label: "Leaderboard", icon: Trophy },
+  { href: "/settings", label: "Settings", icon: Code2 },
+];
+
+const adminExtras: NavItem[] = [
+  { href: "/admin", label: "Admin Panel", icon: Shield },
+];
+
+function getNavItems(role: string): NavItem[] {
+  switch (role) {
+    case "DEVELOPER":
+      return developerItems;
+    case "BOTH":
+      return bothItems;
+    case "ADMIN":
+      return [...bothItems, ...adminExtras];
+    default:
+      return buyerItems;
+  }
+}
+
+interface MobileNavProps {
+  role?: string;
+}
+
+export function MobileNav({ role = "BUYER" }: MobileNavProps) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
+  const navItems = getNavItems(role);
 
   return (
     <>
@@ -41,7 +93,6 @@ export function MobileNav() {
         <Menu className="h-5 w-5" />
       </button>
 
-      {/* Overlay */}
       {open && (
         <div
           className="fixed inset-0 z-40 bg-black/60 md:hidden"
@@ -50,7 +101,6 @@ export function MobileNav() {
         />
       )}
 
-      {/* Slide-in drawer */}
       <aside
         className={cn(
           "fixed inset-y-0 left-0 z-50 w-64 bg-card border-r border-border/50 flex flex-col transition-transform duration-200 md:hidden",
@@ -80,7 +130,8 @@ export function MobileNav() {
           {navItems.map((item) => {
             const isActive =
               pathname === item.href ||
-              (item.href !== "/dashboard" && pathname.startsWith(item.href));
+              (item.href !== "/dashboard" && item.href !== "/jobs" && pathname.startsWith(item.href)) ||
+              (item.href === "/jobs" && pathname === "/jobs");
             return (
               <Link
                 key={item.href}

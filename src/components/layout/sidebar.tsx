@@ -10,49 +10,73 @@ import {
   Trophy,
   Plus,
   Code2,
+  DollarSign,
+  Webhook,
+  Search,
+  Shield,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const navItems = [
-  {
-    href: "/dashboard",
-    label: "Dashboard",
-    icon: LayoutDashboard,
-  },
-  {
-    href: "/jobs",
-    label: "Jobs",
-    icon: Briefcase,
-  },
-  {
-    href: "/jobs/create",
-    label: "Post Job",
-    icon: Plus,
-  },
-  {
-    href: "/bots",
-    label: "Bots",
-    icon: Bot,
-  },
-  {
-    href: "/wallet",
-    label: "Wallet",
-    icon: Wallet,
-  },
-  {
-    href: "/leaderboard",
-    label: "Leaderboard",
-    icon: Trophy,
-  },
-  {
-    href: "/api-docs",
-    label: "API Docs",
-    icon: Code2,
-  },
+interface NavItem {
+  href: string;
+  label: string;
+  icon: React.ElementType;
+}
+
+const buyerItems: NavItem[] = [
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/jobs", label: "My Jobs", icon: Briefcase },
+  { href: "/jobs/create", label: "Post a Job", icon: Plus },
+  { href: "/wallet", label: "Wallet", icon: Wallet },
+  { href: "/settings", label: "Settings", icon: Code2 },
 ];
 
-export function Sidebar() {
+const developerItems: NavItem[] = [
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/bots", label: "My Bots", icon: Bot },
+  { href: "/jobs/browse", label: "Browse Jobs", icon: Search },
+  { href: "/earnings", label: "Earnings", icon: DollarSign },
+  { href: "/webhooks", label: "Webhooks", icon: Webhook },
+  { href: "/settings", label: "Settings", icon: Code2 },
+];
+
+const bothItems: NavItem[] = [
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/jobs", label: "My Jobs", icon: Briefcase },
+  { href: "/jobs/create", label: "Post a Job", icon: Plus },
+  { href: "/jobs/browse", label: "Browse Jobs", icon: Search },
+  { href: "/bots", label: "My Bots", icon: Bot },
+  { href: "/earnings", label: "Earnings", icon: DollarSign },
+  { href: "/wallet", label: "Wallet", icon: Wallet },
+  { href: "/webhooks", label: "Webhooks", icon: Webhook },
+  { href: "/leaderboard", label: "Leaderboard", icon: Trophy },
+  { href: "/settings", label: "Settings", icon: Code2 },
+];
+
+const adminExtras: NavItem[] = [
+  { href: "/admin", label: "Admin Panel", icon: Shield },
+];
+
+function getNavItems(role: string): NavItem[] {
+  switch (role) {
+    case "DEVELOPER":
+      return developerItems;
+    case "BOTH":
+      return bothItems;
+    case "ADMIN":
+      return [...bothItems, ...adminExtras];
+    default:
+      return buyerItems;
+  }
+}
+
+interface SidebarProps {
+  role?: string;
+}
+
+export function Sidebar({ role = "BUYER" }: SidebarProps) {
   const pathname = usePathname();
+  const navItems = getNavItems(role);
 
   return (
     <aside className="w-56 shrink-0 border-r border-border/50 min-h-screen bg-card/30 flex flex-col">
@@ -69,7 +93,8 @@ export function Sidebar() {
         {navItems.map((item) => {
           const isActive =
             pathname === item.href ||
-            (item.href !== "/dashboard" && pathname.startsWith(item.href));
+            (item.href !== "/dashboard" && item.href !== "/jobs" && pathname.startsWith(item.href)) ||
+            (item.href === "/jobs" && pathname === "/jobs");
           return (
             <Link
               key={item.href}
