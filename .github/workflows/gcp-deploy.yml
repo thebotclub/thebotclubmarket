@@ -52,7 +52,7 @@ jobs:
             --min-instances 0 \
             --max-instances 10 \
             --add-cloudsql-instances thebotclub:australia-southeast1:thebotclub-db \
-            --set-env-vars "NODE_ENV=production,DATABASE_URL=${{ secrets.DATABASE_URL }},AUTH_SECRET=${{ secrets.AUTH_SECRET }},NEXTAUTH_SECRET=${{ secrets.NEXTAUTH_SECRET }},NEXTAUTH_URL=https://thebot.club,NEXT_PUBLIC_APP_URL=https://thebot.club,API_KEY_HMAC_SECRET=${{ secrets.API_KEY_HMAC_SECRET }},INTERNAL_SECRET=${{ secrets.INTERNAL_SECRET }},AUTH_TRUST_HOST=true"
+            --set-env-vars "NODE_ENV=production,DATABASE_URL=${{ secrets.DATABASE_URL }},AUTH_SECRET=${{ secrets.AUTH_SECRET }},NEXTAUTH_SECRET=${{ secrets.NEXTAUTH_SECRET }},NEXTAUTH_URL=https://thebot.club,NEXT_PUBLIC_APP_URL=https://thebot.club,API_KEY_HMAC_SECRET=${{ secrets.API_KEY_HMAC_SECRET }},INTERNAL_SECRET=${{ secrets.INTERNAL_SECRET }},AUTH_TRUST_HOST=true,STRIPE_SECRET_KEY=${{ secrets.STRIPE_SECRET_KEY }},STRIPE_WEBHOOK_SECRET=${{ secrets.STRIPE_WEBHOOK_SECRET }},NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=${{ secrets.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY }}"
       - name: Health check
         run: |
           URL=$(gcloud run services describe thebotclub-production --region australia-southeast1 --format 'value(status.url)')
