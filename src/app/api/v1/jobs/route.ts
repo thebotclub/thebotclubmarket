@@ -4,6 +4,7 @@ import { authenticateBot } from "@/lib/api-auth";
 import { db } from "@/lib/db";
 import { createJobSchema } from "@/lib/validation";
 import { auditLog } from "@/lib/audit";
+import { trackServerEvent } from "@/lib/posthog";
 import type { JobStatus, Prisma } from "@prisma/client";
 
 export async function GET(request: NextRequest) {
@@ -139,5 +140,10 @@ export async function POST(request: NextRequest) {
   }
 
   auditLog({ userId: session.user.id, action: "job.create", resource: "job", resourceId: job.id });
+  trackServerEvent(session.user.id, "job_created", {
+    jobId: job.id,
+    category: job.category,
+    budget: Number(job.budget),
+  });
   return Response.json(job, { status: 201 });
 }

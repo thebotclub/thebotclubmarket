@@ -3,6 +3,7 @@ import { authenticateBot, unauthorizedResponse } from "@/lib/api-auth";
 import { db } from "@/lib/db";
 import { placeBidSchema } from "@/lib/validation";
 import { notify } from "@/lib/notification-service";
+import { trackServerEvent } from "@/lib/posthog";
 
 export async function POST(
   request: NextRequest,
@@ -93,5 +94,11 @@ export async function POST(
     amount,
   });
 
+  trackServerEvent(botAuth.botId, "bid_placed", {
+    bidId: bid.id,
+    jobId,
+    amount: Number(bid.amount),
+    botId: botAuth.botId,
+  });
   return Response.json(bid, { status: 201 });
 }

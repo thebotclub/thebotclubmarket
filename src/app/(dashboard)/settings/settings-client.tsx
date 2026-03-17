@@ -3,7 +3,9 @@
 import { useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { User, Mail, Calendar, Shield, Bell, Key, AlertTriangle, Check } from "lucide-react";
+import { User, Mail, Calendar, Shield, Bell, Key, AlertTriangle, Check, CreditCard, ExternalLink } from "lucide-react";
+import { TierBadge } from "@/components/subscription/tier-badge";
+import type { SubscriptionTier } from "@/lib/subscription";
 
 interface Props {
   operator: {
@@ -12,8 +14,13 @@ interface Props {
     email: string;
     image: string | null;
     createdAt: string;
+    stripeCustomerId: string | null;
+    subscriptionTier: string | null;
+    subscriptionStatus: string | null;
+    subscriptionPeriodEnd: string | null;
     _count: { jobs: number; bots: number };
   };
+  subscriptionTier: SubscriptionTier;
 }
 
 const NOTIFICATION_TYPES = [
@@ -25,8 +32,21 @@ const NOTIFICATION_TYPES = [
   { key: "webhook_failed", label: "Webhook failures" },
 ];
 
-export function SettingsClient({ operator }: Props) {
+export function SettingsClient({ operator, subscriptionTier }: Props) {
   const [name, setName] = useState(operator.name);
+  const [portalLoading, setPortalLoading] = useState(false);
+
+  async function handleBillingPortal() {
+    setPortalLoading(true);
+    try {
+      const res = await fetch("/api/v1/billing/portal", { method: "POST" });
+      const data = await res.json();
+      if (data.url) window.location.href = data.url;
+      else alert(data.error ?? "Failed to open billing portal");
+    } finally {
+      setPortalLoading(false);
+    }
+  }
   const [avatarUrl, setAvatarUrl] = useState(operator.image ?? "");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -139,6 +159,56 @@ export function SettingsClient({ operator }: Props) {
               </div>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* Billing & Subscription */}
+      <section className="bg-card border border-border rounded-xl p-6 space-y-4">
+        <div className="flex items-center gap-2 font-semibold text-sm">
+          <CreditCard className="h-4 w-4 text-muted-foreground" />
+          Billing & Subscription
+        </div>
+        <div className="flex items-center justify-between p-3 rounded-md bg-muted/20 border border-border/50">
+          <div>
+            <p className="text-xs text-muted-foreground mb-1">Current Plan</p>
+            <TierBadge tier={subscriptionTier} />
+          </div>
+          {operator.subscriptionPeriodEnd && subscriptionTier !== "FREE" && (
+            <div className="text-right">
+              <p className="text-xs text-muted-foreground">Renews</p>
+              <p className="text-sm font-mono">{new Date(operator.subscriptionPeriodEnd).toLocaleDateString()}</p>
+            </div>
+          )}
+        </div>
+        {operator.subscriptionStatus === "past_due" && (
+          <div className="rounded-md bg-red-500/10 border border-red-500/30 p-3 text-sm text-red-400">
+            ⚠️ Your last payment failed. Please update your payment method to avoid service interruption.
+          </div>
+        )}
+        <div className="flex flex-wrap gap-3">
+          {subscriptionTier === "FREE" ? (
+            <a
+              href="/pricing"
+              className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-md text-sm font-semibold hover:bg-primary/90 transition-colors"
+            >
+              Upgrade Plan
+            </a>
+          ) : (
+            <button
+              onClick={handleBillingPortal}
+              disabled={portalLoading}
+              className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-md text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-60"
+            >
+              <ExternalLink className="h-3.5 w-3.5" />
+              {portalLoading ? "Opening…" : "Manage Billing"}
+            </button>
+          )}
+          <a
+            href="/pricing"
+            className="inline-flex items-center gap-2 border border-border px-4 py-2 rounded-md text-sm hover:border-primary/50 transition-colors"
+          >
+            View Plans
+          </a>
         </div>
       </section>
 

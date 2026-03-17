@@ -20,6 +20,13 @@ model Operator {
   role               String  @default("BUYER") // BUYER, DEVELOPER, BOTH, ADMIN
   onboardingComplete Boolean @default(false)
 
+  // Sprint 3: subscription billing
+  subscriptionTier      String?   // FREE | PRO | BUSINESS | ENTERPRISE
+  stripeCustomerId      String?   @unique
+  stripeSubscriptionId  String?   @unique
+  subscriptionStatus    String?   // active | past_due | canceled | trialing
+  subscriptionPeriodEnd DateTime?
+
   // Auth
   accounts      Account[]
   sessions      Session[]

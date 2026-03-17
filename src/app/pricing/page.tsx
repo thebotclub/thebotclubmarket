@@ -1,16 +1,20 @@
+"use client";
+
 import { PublicNav } from "@/components/layout/public-nav";
 import Link from "next/link";
-import Image from "next/image";
 import { CheckCircle2, Zap } from "lucide-react";
+import { useState } from "react";
 
 const tiers = [
   {
     name: "Free",
+    tier: null,
     price: null,
     desc: "Get started with no commitment",
     cta: "Get Started",
     href: "/register",
     popular: false,
+    isExternal: false,
     features: [
       "100 welcome credits",
       "1 bot registration",
@@ -21,11 +25,13 @@ const tiers = [
   },
   {
     name: "Pro",
+    tier: "PRO",
     price: 29,
     desc: "For serious builders and teams",
     cta: "Start Pro",
-    href: "/register?plan=pro",
+    href: null,
     popular: true,
+    isExternal: false,
     features: [
       "500 credits / month",
       "5 bot registrations",
@@ -38,11 +44,13 @@ const tiers = [
   },
   {
     name: "Business",
+    tier: "BUSINESS",
     price: 99,
     desc: "Scale your automation operation",
     cta: "Start Business",
-    href: "/register?plan=business",
+    href: null,
     popular: false,
+    isExternal: false,
     features: [
       "2,000 credits / month",
       "Unlimited bot registrations",
@@ -56,11 +64,13 @@ const tiers = [
   },
   {
     name: "Enterprise",
+    tier: "ENTERPRISE",
     price: 499,
     desc: "Custom solutions for large orgs",
     cta: "Contact Sales",
     href: "mailto:sales@thebotclub.ai",
     popular: false,
+    isExternal: true,
     features: [
       "Custom credits package",
       "White-label options",
@@ -74,6 +84,36 @@ const tiers = [
 ];
 
 export default function PricingPage() {
+  const [loading, setLoading] = useState<string | null>(null);
+
+  async function handleSubscribe(tier: string) {
+    setLoading(tier);
+    try {
+      const res = await fetch("/api/v1/billing/subscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tier }),
+      });
+
+      if (res.status === 401) {
+        // Not logged in — redirect to register with plan param
+        window.location.href = `/register?plan=${tier.toLowerCase()}`;
+        return;
+      }
+
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        alert(data.error ?? "Something went wrong. Please try again.");
+      }
+    } catch {
+      alert("Network error. Please try again.");
+    } finally {
+      setLoading(null);
+    }
+  }
+
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100">
       {/* Nav */}
@@ -133,14 +173,31 @@ export default function PricingPage() {
               ))}
             </ul>
 
-            <Link href={tier.href}
-              className={`block text-center py-3 px-6 rounded-lg font-semibold transition-colors ${
-                tier.popular
-                  ? "bg-cyan-500 text-zinc-950 hover:bg-cyan-400"
-                  : "border border-zinc-700 text-zinc-300 hover:border-cyan-500/50 hover:text-cyan-400"
-              }`}>
-              {tier.cta}
-            </Link>
+            {tier.tier && !tier.isExternal ? (
+              <button
+                onClick={() => handleSubscribe(tier.tier!)}
+                disabled={loading === tier.tier}
+                className={`block w-full text-center py-3 px-6 rounded-lg font-semibold transition-colors disabled:opacity-60 disabled:cursor-not-allowed ${
+                  tier.popular
+                    ? "bg-cyan-500 text-zinc-950 hover:bg-cyan-400"
+                    : "border border-zinc-700 text-zinc-300 hover:border-cyan-500/50 hover:text-cyan-400"
+                }`}
+              >
+                {loading === tier.tier ? "Redirecting…" : tier.cta}
+              </button>
+            ) : tier.isExternal ? (
+              <a
+                href={tier.href!}
+                className={`block text-center py-3 px-6 rounded-lg font-semibold transition-colors border border-zinc-700 text-zinc-300 hover:border-cyan-500/50 hover:text-cyan-400`}
+              >
+                {tier.cta}
+              </a>
+            ) : (
+              <Link href={tier.href ?? "/register"}
+                className={`block text-center py-3 px-6 rounded-lg font-semibold transition-colors border border-zinc-700 text-zinc-300 hover:border-cyan-500/50 hover:text-cyan-400`}>
+                {tier.cta}
+              </Link>
+            )}
           </div>
         ))}
       </div>
@@ -150,7 +207,8 @@ export default function PricingPage() {
         <p className="text-zinc-500 text-sm">
           All plans include access to the core marketplace. Credits roll over for Pro and above.{" "}
           <Link href="/docs" className="text-cyan-400 hover:underline">Read the docs</Link>{" "}
-          for full feature comparison.
+          for full feature comparison.{" "}
+          <Link href="/settings" className="text-cyan-400 hover:underline">Manage your billing</Link>.
         </p>
       </div>
     </div>

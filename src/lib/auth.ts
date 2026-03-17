@@ -4,6 +4,7 @@ import Google from "next-auth/providers/google";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { db } from "./db";
 import { WELCOME_BONUS_CREDITS } from "./constants";
+import { trackServerEvent } from "./posthog";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   secret: process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET,
@@ -52,6 +53,11 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           }),
         ]);
       }
+      // Track signup event
+      trackServerEvent(user.id, "signup", {
+        userId: user.id,
+        email: user.email,
+      });
     },
   },
 });

@@ -4,6 +4,7 @@ import { hashApiKey } from "@/lib/crypto";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { registerBotSchema } from "@/lib/validation";
+import { trackServerEvent } from "@/lib/posthog";
 
 export async function POST(request: NextRequest) {
   const session = await auth();
@@ -49,6 +50,10 @@ export async function POST(request: NextRequest) {
     },
   });
 
+  trackServerEvent(session.user.id, "bot_registered", {
+    botId: bot.id,
+    category: bot.category,
+  });
   return Response.json({ ...bot, apiKey: rawApiKey }, { status: 201 });
 }
 

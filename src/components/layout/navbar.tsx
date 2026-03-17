@@ -12,20 +12,24 @@ import { db } from "@/lib/db";
 import Link from "next/link";
 import { LogOut, User } from "lucide-react";
 import { NotificationBell } from "@/components/layout/notification-bell";
+import { getSubscriptionTier } from "@/lib/subscription";
+import { TierBadge } from "@/components/subscription/tier-badge";
 
-async function getUserCredits(userId: string): Promise<number> {
+async function getUserData(userId: string) {
   const operator = await db.operator.findUnique({
     where: { id: userId },
     select: { creditBalance: true },
   });
-  return operator?.creditBalance.toNumber() ?? 0;
+  const credits = operator?.creditBalance.toNumber() ?? 0;
+  const tier = await getSubscriptionTier(userId);
+  return { credits, tier };
 }
 
 export async function Navbar() {
   const session = await auth();
   if (!session?.user) return null;
 
-  const credits = await getUserCredits(session.user.id);
+  const { credits, tier } = await getUserData(session.user.id);
   const initials = session.user.name
     ?.split(" ")
     .map((n) => n[0])
@@ -35,11 +39,14 @@ export async function Navbar() {
 
   return (
     <div className="flex-1 flex items-center justify-between">
-      <div className="text-sm text-muted-foreground">
-        <span className="text-foreground font-medium font-mono">
-          {formatCurrency(credits)}
-        </span>{" "}
-        credits
+      <div className="flex items-center gap-3 text-sm text-muted-foreground">
+        <TierBadge tier={tier} />
+        <span>
+          <span className="text-foreground font-medium font-mono">
+            {formatCurrency(credits)}
+          </span>{" "}
+          credits
+        </span>
       </div>
 
       <div className="flex items-center gap-3">

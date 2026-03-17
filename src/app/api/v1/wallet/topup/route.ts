@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { auth } from "@/lib/auth";
 import { getStripe } from "@/lib/stripe";
+import { trackServerEvent } from "@/lib/posthog";
 
 export async function POST(request: NextRequest) {
   const stripe = getStripe();
@@ -44,5 +45,10 @@ export async function POST(request: NextRequest) {
     cancel_url: `${process.env.NEXTAUTH_URL}/wallet?cancelled=1`,
   });
 
+  trackServerEvent(session.user.id, "payment_initiated", {
+    amount,
+    credits,
+    sessionId: checkoutSession.id,
+  });
   return Response.json({ url: checkoutSession.url });
 }

@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { getStripe } from "@/lib/stripe";
 import { db } from "@/lib/db";
+import { trackServerEvent } from "@/lib/posthog";
 import type Stripe from "stripe";
 
 export async function POST(request: NextRequest) {
@@ -31,47 +32,105 @@ export async function POST(request: NextRequest) {
   }
 
   switch (event.type) {
+    // ─── One-time credit purchases ──────────────────────────────────────────
     case "checkout.session.completed": {
       const session = event.data.object as Stripe.Checkout.Session;
-      const operatorId = session.metadata?.operatorId;
-      const credits = Number(session.metadata?.credits ?? 0);
-      const paymentIntentId = session.payment_intent as string;
 
-      if (!operatorId || !credits) break;
+      if (session.mode === "payment") {
+        // One-time credit purchase
+        const operatorId = session.metadata?.operatorId;
+        const credits = Number(session.metadata?.credits ?? 0);
+        const paymentIntentId = session.payment_intent as string;
 
-      try {
-        await db.$transaction([
-          db.operator.update({
-            where: { id: operatorId },
-            data: { creditBalance: { increment: credits } },
-          }),
-          db.creditTransaction.create({
-            data: {
-              amount: credits,
-              type: "PURCHASE",
-              description: `Stripe purchase: ${credits} credits`,
-              stripePaymentId: paymentIntentId,
-              operatorId,
-            },
-          }),
-          db.ledger.create({
-            data: {
-              type: "CREDIT_PURCHASE",
-              amount: credits,
-              description: `Credit purchase via Stripe`,
-              operatorId,
-            },
-          }),
-        ]);
-      } catch (err: unknown) {
-        if (
-          err instanceof Error &&
-          (err as NodeJS.ErrnoException & { code?: string }).code === "P2002"
-        ) {
-          console.log(`Duplicate Stripe webhook skipped: ${paymentIntentId}`);
-          return Response.json({ received: true });
+        if (!operatorId || !credits) break;
+
+        try {
+          await db.$transaction([
+            db.operator.update({
+              where: { id: operatorId },
+              data: { creditBalance: { increment: credits } },
+            }),
+            db.creditTransaction.create({
+              data: {
+                amount: credits,
+                type: "PURCHASE",
+                description: `Stripe purchase: ${credits} credits`,
+                stripePaymentId: paymentIntentId,
+                operatorId,
+              },
+            }),
+            db.ledger.create({
+              data: {
+                type: "CREDIT_PURCHASE",
+                amount: credits,
+                description: `Credit purchase via Stripe`,
+                operatorId,
+              },
+            }),
+          ]);
+        } catch (err: unknown) {
+          if (
+            err instanceof Error &&
+            (err as NodeJS.ErrnoException & { code?: string }).code === "P2002"
+          ) {
+            console.log(`Duplicate Stripe webhook skipped: ${paymentIntentId}`);
+            return Response.json({ received: true });
+          }
+          throw err;
         }
-        throw err;
+
+        trackServerEvent(operatorId, "payment_completed", {
+          credits,
+          paymentIntentId,
+          type: "credit_purchase",
+        });
+      }
+      break;
+    }
+
+    // ─── Subscription lifecycle ─────────────────────────────────────────────
+    case "customer.subscription.created":
+    case "customer.subscription.updated": {
+      const subscription = event.data.object as Stripe.Subscription;
+      await handleSubscriptionChange(subscription);
+      break;
+    }
+
+    case "customer.subscription.deleted": {
+      const subscription = event.data.object as Stripe.Subscription;
+      // Find operator by Stripe customer ID
+      const operator = await db.operator.findFirst({
+        where: { stripeCustomerId: subscription.customer as string },
+        select: { id: true },
+      });
+      if (operator) {
+        await db.operator.update({
+          where: { id: operator.id },
+          data: {
+            subscriptionTier: "FREE",
+            subscriptionStatus: "canceled",
+            stripeSubscriptionId: null,
+            subscriptionPeriodEnd: null,
+          },
+        });
+        console.log(`Subscription canceled for operator: ${operator.id}`);
+      }
+      break;
+    }
+
+    case "invoice.payment_failed": {
+      const invoice = event.data.object as Stripe.Invoice;
+      const customerId = invoice.customer as string;
+      const operator = await db.operator.findFirst({
+        where: { stripeCustomerId: customerId },
+        select: { id: true, email: true },
+      });
+      if (operator) {
+        await db.operator.update({
+          where: { id: operator.id },
+          data: { subscriptionStatus: "past_due" },
+        });
+        console.error(`Invoice payment failed for operator: ${operator.id} (${operator.email})`);
       }
       break;
     }
@@ -86,4 +145,34 @@ export async function POST(request: NextRequest) {
   }
 
   return Response.json({ received: true });
+}
+
+async function handleSubscriptionChange(subscription: Stripe.Subscription) {
+  const customerId = subscription.customer as string;
+  const operator = await db.operator.findFirst({
+    where: { stripeCustomerId: customerId },
+    select: { id: true },
+  });
+
+  if (!operator) {
+    console.error(`No operator found for Stripe customer: ${customerId}`);
+    return;
+  }
+
+  // Derive tier from metadata or price lookup
+  const tier = subscription.metadata?.tier as string | undefined;
+  const status = subscription.status;
+  const periodEnd = new Date((subscription as Stripe.Subscription & { current_period_end?: number }).current_period_end! * 1000);
+
+  await db.operator.update({
+    where: { id: operator.id },
+    data: {
+      subscriptionTier: tier ?? "FREE",
+      subscriptionStatus: status,
+      stripeSubscriptionId: subscription.id,
+      subscriptionPeriodEnd: periodEnd,
+    },
+  });
+
+  console.log(`Subscription updated for operator: ${operator.id} → ${tier} (${status})`);
 }
