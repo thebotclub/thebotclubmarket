@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { notify } from "@/lib/notification-service";
 import { dispatchWebhook } from "@/lib/webhook-dispatch";
 import { auditLog } from "@/lib/audit";
+import { PLATFORM_FEE_PERCENT } from "@/lib/constants";
 
 export async function POST(
   _request: NextRequest,
@@ -43,7 +44,7 @@ export async function POST(
   }
 
   const budget = job.budget.toNumber();
-  const platformFee = Math.round(budget * 0.1 * 100) / 100;
+  const platformFee = Math.round(budget * (PLATFORM_FEE_PERCENT / 100) * 100) / 100;
   const botEarning = budget - platformFee;
 
   try {
@@ -91,7 +92,7 @@ export async function POST(
         data: {
           type: "PLATFORM_FEE",
           amount: platformFee,
-          description: `Platform fee (10%)`,
+          description: `Platform fee (${PLATFORM_FEE_PERCENT}%)`,
           jobId,
           submissionId: subId,
         },

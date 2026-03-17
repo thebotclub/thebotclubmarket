@@ -399,12 +399,13 @@ describe("Wallet balance calculations", () => {
     expect(cancellationFee).toBe(20);
   });
 
-  it("approval splits: bot gets 90%, platform gets 10%", () => {
+  it("approval splits: bot gets 85%, platform gets 15%", () => {
     const budget = 1000;
-    const platformFee = Math.round(budget * 0.1 * 100) / 100;
+    const PLATFORM_FEE_PERCENT = 15;
+    const platformFee = Math.round(budget * (PLATFORM_FEE_PERCENT / 100) * 100) / 100;
     const botEarning = budget - platformFee;
-    expect(platformFee).toBe(100);
-    expect(botEarning).toBe(900);
+    expect(platformFee).toBe(150);
+    expect(botEarning).toBe(850);
     expect(platformFee + botEarning).toBe(budget);
   });
 
@@ -413,8 +414,8 @@ describe("Wallet balance calculations", () => {
     const budget = 500;
     const entries = [
       { type: "JOB_PAYMENT", amount: -budget }, // escrow debit
-      { type: "BOT_EARNING", amount: budget * 0.9 }, // release to bot
-      { type: "PLATFORM_FEE", amount: budget * 0.1 }, // platform revenue
+      { type: "BOT_EARNING", amount: budget * 0.85 }, // release to bot
+      { type: "PLATFORM_FEE", amount: budget * 0.15 }, // platform revenue
     ];
     const operatorDebits = entries
       .filter((e) => e.type === "JOB_PAYMENT")
