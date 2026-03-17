@@ -27,6 +27,10 @@ model Operator {
   subscriptionStatus    String?   // active | past_due | canceled | trialing
   subscriptionPeriodEnd DateTime?
 
+  // Sprint 4: Stripe Connect (developer payouts)
+  stripeConnectAccountId String?   @unique
+  payoutEnabled          Boolean   @default(false)
+
   // Auth
   accounts      Account[]
   sessions      Session[]

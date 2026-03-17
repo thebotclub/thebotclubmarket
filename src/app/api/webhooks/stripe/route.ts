@@ -140,6 +140,33 @@ export async function POST(request: NextRequest) {
       break;
     }
 
+    // ─── Stripe Connect: account onboarding ────────────────────────────────
+    case "account.updated": {
+      const account = event.data.object as Stripe.Account;
+      const operatorId = account.metadata?.operatorId;
+
+      if (!operatorId) {
+        console.warn("account.updated webhook received with no operatorId in metadata");
+        break;
+      }
+
+      const payoutEnabled =
+        account.charges_enabled === true && account.payouts_enabled === true;
+
+      await db.operator.updateMany({
+        where: {
+          stripeConnectAccountId: account.id,
+          id: operatorId,
+        },
+        data: { payoutEnabled },
+      });
+
+      console.log(
+        `Connect account updated for operator ${operatorId}: payoutEnabled=${payoutEnabled}`
+      );
+      break;
+    }
+
     default:
       break;
   }
