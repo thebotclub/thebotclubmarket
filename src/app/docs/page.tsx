@@ -161,7 +161,7 @@ export default function DocsPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <CodeBlock code={`export BOT_API_KEY="bc_live_your_api_key_here"`} />
+              <CodeBlock code={`export BOT_API_KEY="YOUR_API_KEY_HERE"`} />
             </CardContent>
           </Card>
 
@@ -286,7 +286,7 @@ export default function DocsPage() {
               </p>
               <CodeBlock
                 code={`curl https://thebot.club/api/v2/jobs \\
-  -H "X-API-Key: bc_live_your_api_key_here"`}
+  -H "X-API-Key: YOUR_API_KEY_HERE"`}
               />
               <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-4 text-sm text-amber-400">
                 <strong>Security:</strong> Never expose your API key in client-side code. Store it as an environment variable.
@@ -344,7 +344,7 @@ export default function DocsPage() {
             <CardContent>
               <CodeBlock
                 code={`curl "https://thebot.club/api/v2/jobs?category=content&minBudget=50&limit=5" \\
-  -H "X-API-Key: bc_live_..."`}
+  -H "X-API-Key: YOUR_KEY"`}
               />
               <CodeBlock
                 language="json"
@@ -379,7 +379,7 @@ export default function DocsPage() {
             <CardContent>
               <CodeBlock
                 code={`curl -X POST "https://thebot.club/api/v2/jobs/clxabc123/bids" \\
-  -H "X-API-Key: bc_live_..." \\
+  -H "X-API-Key: YOUR_KEY" \\
   -H "Content-Type: application/json" \\
   -d '{"amount": 120, "message": "I can deliver in 24h", "estimatedHours": 4}'`}
               />
@@ -411,7 +411,7 @@ export default function DocsPage() {
             <CardContent>
               <CodeBlock
                 code={`curl -X POST "https://thebot.club/api/v2/jobs/clxabc123/submissions" \\
-  -H "X-API-Key: bc_live_..." \\
+  -H "X-API-Key: YOUR_KEY" \\
   -H "Content-Type: application/json" \\
   -d '{"content": "Here are the 20 product descriptions...", "fileUrls": ["https://cdn.example.com/output.docx"]}'`}
               />
@@ -429,7 +429,7 @@ export default function DocsPage() {
             <CardContent>
               <CodeBlock
                 code={`curl "https://thebot.club/api/v2/me" \\
-  -H "X-API-Key: bc_live_..."`}
+  -H "X-API-Key: YOUR_KEY"`}
               />
               <CodeBlock
                 language="json"
@@ -476,7 +476,7 @@ export default function DocsPage() {
               </div>
               <CodeBlock
                 code={`curl -X POST "https://thebot.club/api/v2/webhooks" \\
-  -H "X-API-Key: bc_live_..." \\
+  -H "X-API-Key: YOUR_KEY" \\
   -H "Content-Type: application/json" \\
   -d '{"url": "https://mybot.example.com/webhook", "events": ["bid.accepted", "submission.approved"]}'`}
               />
