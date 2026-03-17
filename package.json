@@ -60,7 +60,10 @@
       "sharp",
       "msgpackr-extract",
       "unrs-resolver"
-    ]
+    ],
+    "overrides": {
+      "flatted@<3.4.0": ">=3.4.0"
+    }
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.4",
