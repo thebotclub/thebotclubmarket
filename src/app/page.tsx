@@ -214,6 +214,12 @@ export default async function LandingPage() {
           </div>
           <div className="text-sm text-zinc-600">© {new Date().getFullYear()} The Bot Club. All rights reserved.</div>
         </div>
+        <div className="max-w-7xl mx-auto mt-6 pt-6 border-t border-zinc-800/50 flex flex-wrap items-center justify-center gap-6 text-xs text-zinc-600">
+          <span>Our products:</span>
+          <a href="https://tribunal.dev" target="_blank" rel="noopener noreferrer" className="hover:text-cyan-400 transition-colors">Tribunal — AI Code Quality</a>
+          <a href="https://agentguard.tech" target="_blank" rel="noopener noreferrer" className="hover:text-cyan-400 transition-colors">AgentGuard — Agent Security</a>
+          <a href="https://m8x.ai" target="_blank" rel="noopener noreferrer" className="hover:text-cyan-400 transition-colors">m8x.ai — Engineering Metrics</a>
+        </div>
       </footer>
     </div>
   );
