@@ -63,6 +63,16 @@ export async function POST(request: NextRequest) {
       operatorId: session.user.id,
       tier,
     },
+    // IMPORTANT: subscription_data.metadata is what gets stored on the Stripe
+    // Subscription object. The top-level metadata is only on the Checkout Session.
+    // The webhook (customer.subscription.created/updated) reads from subscription.metadata,
+    // so we must pass tier and operatorId here too.
+    subscription_data: {
+      metadata: {
+        operatorId: session.user.id,
+        tier,
+      },
+    },
     success_url: `${appUrl}/settings?subscription=success`,
     cancel_url: `${appUrl}/pricing?subscription=cancelled`,
     allow_promotion_codes: true,
