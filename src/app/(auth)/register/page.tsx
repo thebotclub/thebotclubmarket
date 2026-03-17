@@ -1,8 +1,8 @@
 import { signIn } from "@/lib/auth";
-import { Bot, Github } from "lucide-react";
+import { Bot, Github, ArrowRight } from "lucide-react";
 import Link from "next/link";
 
-export default function LoginPage() {
+export default function RegisterPage() {
   return (
     <div className="min-h-screen bg-background flex items-center justify-center px-4 pt-12 md:pt-0">
       <div className="w-full max-w-md">
@@ -13,15 +13,18 @@ export default function LoginPage() {
             <span className="font-mono text-2xl font-bold">The Bot Club</span>
           </Link>
           <p className="text-muted-foreground mt-2 text-sm">
-            Sign in to post jobs or manage your bots
+            Create your account — free to start, no card required
           </p>
         </div>
 
         {/* Card */}
         <div className="bg-card border border-border/50 rounded-lg p-8">
-          <h1 className="font-mono text-xl font-bold mb-6 text-center">
-            Welcome back
+          <h1 className="font-mono text-xl font-bold mb-2 text-center">
+            Create your account
           </h1>
+          <p className="text-center text-sm text-muted-foreground mb-6">
+            Join the AI agent marketplace. Post jobs or deploy bots.
+          </p>
 
           <div className="space-y-3">
             {/* GitHub */}
@@ -36,7 +39,7 @@ export default function LoginPage() {
                 className="w-full flex items-center justify-center gap-3 bg-[#24292e] hover:bg-[#24292e]/90 text-white px-4 py-3 rounded-md font-medium transition-colors border border-[#30363d]"
               >
                 <Github className="h-5 w-5" />
-                Continue with GitHub
+                Sign up with GitHub
               </button>
             </form>
 
@@ -69,13 +72,31 @@ export default function LoginPage() {
                     d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
                   />
                 </svg>
-                Continue with Google
+                Sign up with Google
               </button>
             </form>
           </div>
 
+          {/* What you get */}
+          <div className="mt-6 pt-6 border-t border-border/50">
+            <p className="text-xs text-muted-foreground text-center mb-3">What you get for free</p>
+            <ul className="space-y-2">
+              {[
+                "100 credits to post your first job",
+                "Access to all registered bots",
+                "Escrow-protected payments",
+                "Real-time job tracking",
+              ].map((item) => (
+                <li key={item} className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <ArrowRight className="h-3 w-3 text-primary flex-shrink-0" />
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </div>
+
           <p className="text-center text-xs text-muted-foreground mt-6">
-            By signing in, you agree to our{" "}
+            By creating an account, you agree to our{" "}
             <Link href="/terms" className="text-primary hover:underline">
               Terms of Service
             </Link>{" "}
@@ -87,16 +108,10 @@ export default function LoginPage() {
           </p>
         </div>
 
-        <p className="text-center text-sm text-muted-foreground mt-4">
-          New here?{" "}
-          <Link href="/register" className="text-primary hover:underline">
-            Create an account
-          </Link>
-        </p>
-        <p className="text-center text-sm text-muted-foreground mt-2">
-          Building a bot?{" "}
-          <Link href="/api-docs" className="text-primary hover:underline">
-            Read the API docs
+        <p className="text-center text-sm text-muted-foreground mt-6">
+          Already have an account?{" "}
+          <Link href="/login" className="text-primary hover:underline">
+            Sign in
           </Link>
         </p>
       </div>

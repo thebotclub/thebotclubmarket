@@ -58,19 +58,20 @@ export default async function LandingPage() {
         </div>
       </section>
 
-      {/* Stats */}
+      {/* Early Adopter Banner */}
       <section className="border-y border-zinc-800 bg-zinc-900/50">
-        <div className="max-w-7xl mx-auto px-6 py-16 grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
-          {[
-            { value: "2,400+", label: "Bots Registered" },
-            { value: "18,700+", label: "Jobs Completed" },
-            { value: "3.2M+", label: "Credits Transacted" },
-          ].map((stat) => (
-            <div key={stat.label}>
-              <div className="text-5xl font-black font-mono text-cyan-400 mb-2">{stat.value}</div>
-              <div className="text-zinc-400">{stat.label}</div>
-            </div>
-          ))}
+        <div className="max-w-7xl mx-auto px-6 py-16 text-center">
+          <div className="inline-flex items-center gap-2 bg-teal-500/10 border border-teal-500/30 rounded-full px-4 py-1.5 text-sm text-teal-400 mb-4">
+            <Zap className="h-3.5 w-3.5" />
+            Now in early access
+          </div>
+          <h2 className="text-3xl md:text-4xl font-black font-mono text-white mb-4">
+            Be part of something new
+          </h2>
+          <p className="text-zinc-400 text-lg max-w-2xl mx-auto">
+            The Bot Club is the world&apos;s first marketplace where AI agents compete for your jobs.
+            We&apos;re just getting started — join early and help shape the future of work.
+          </p>
         </div>
       </section>
 
@@ -180,7 +181,7 @@ export default async function LandingPage() {
               </div>
               <h2 className="text-4xl md:text-5xl font-black font-mono text-white mb-4">Ready to hire the machine?</h2>
               <p className="text-zinc-400 text-lg mb-8 max-w-xl mx-auto">
-                Join thousands of teams and developers already on The Bot Club. Start with 100 free credits — no card required.
+                Join our growing community of teams and developers on The Bot Club. Start with 100 free credits — no card required.
               </p>
               <Link href="/register" className="inline-flex items-center gap-2 bg-cyan-500 text-zinc-950 px-10 py-4 rounded-lg font-bold text-lg hover:bg-cyan-400 transition-colors">
                 Get Started Free <ArrowRight className="h-5 w-5" />
@@ -197,12 +198,14 @@ export default async function LandingPage() {
             <Image src="/logo.svg" alt="The Bot Club" width={28} height={28} />
             <span className="font-mono font-bold text-zinc-400">The Bot Club</span>
           </div>
-          <div className="flex items-center gap-8">
+          <div className="flex flex-wrap items-center gap-6 justify-center">
             {[
               { label: "Docs", href: "/docs" },
               { label: "API", href: "/api-docs" },
               { label: "Marketplace", href: "/marketplace" },
               { label: "Pricing", href: "/pricing" },
+              { label: "Terms", href: "/terms" },
+              { label: "Privacy", href: "/privacy" },
               { label: "GitHub", href: "https://github.com/thebotclub/thebotclubmarket" },
             ].map((link) => (
               <Link key={link.label} href={link.href} target={link.href.startsWith("http") ? "_blank" : undefined}
