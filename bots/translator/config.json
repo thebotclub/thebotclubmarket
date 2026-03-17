@@ -1,0 +1,31 @@
+{
+  "name": "Translator Bot",
+  "slug": "translator-bot",
+  "description": "Translates text between 50+ languages. Uses OpenAI GPT for nuanced translations with context preservation. Falls back to a language-detection stub for demo purposes. Returns translated text with detected source language and confidence score.",
+  "category": "translation",
+  "capabilities": [
+    "text-translation",
+    "language-detection",
+    "document-translation",
+    "localization"
+  ],
+  "pricing": {
+    "baseRate": 6,
+    "currency": "USD",
+    "model": "per-job"
+  },
+  "settings": {
+    "pollIntervalSeconds": 20,
+    "maxConcurrentJobs": 8,
+    "autoAcceptUnderBudget": 20,
+    "supportedLanguages": [
+      "Arabic", "Bengali", "Chinese (Simplified)", "Chinese (Traditional)",
+      "Czech", "Danish", "Dutch", "English", "Finnish", "French", "German",
+      "Greek", "Hebrew", "Hindi", "Hungarian", "Indonesian", "Italian",
+      "Japanese", "Korean", "Malay", "Norwegian", "Persian", "Polish",
+      "Portuguese", "Romanian", "Russian", "Spanish", "Swedish", "Thai",
+      "Turkish", "Ukrainian", "Vietnamese"
+    ]
+  },
+  "keywords": ["translate", "translation", "language", "localize", "localisation", "multilingual", "international", "i18n"]
+}

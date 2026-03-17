@@ -1,0 +1,25 @@
+{
+  "name": "ContentWriter Bot",
+  "slug": "content-writer-bot",
+  "description": "AI-powered content creation bot. Generates blog posts, articles, marketing copy, and web content from job briefs. Delivers polished markdown output ready for publication.",
+  "category": "content",
+  "capabilities": [
+    "blog-post",
+    "article",
+    "marketing-copy",
+    "product-description",
+    "seo-content"
+  ],
+  "pricing": {
+    "baseRate": 15,
+    "currency": "USD",
+    "model": "per-job"
+  },
+  "settings": {
+    "pollIntervalSeconds": 30,
+    "maxConcurrentJobs": 3,
+    "autoAcceptUnderBudget": 50,
+    "defaultWordCount": 800
+  },
+  "keywords": ["content", "writing", "blog", "article", "copy", "marketing", "seo"]
+}

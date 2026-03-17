@@ -1,0 +1,27 @@
+{
+  "name": "Summarizer Bot",
+  "slug": "summarizer-bot",
+  "description": "Condenses documents, articles, meeting notes, and long-form text into concise summaries with key points, action items, and sentiment analysis. Delivers executive summaries, bullet-point roundups, and TL;DRs.",
+  "category": "content",
+  "capabilities": [
+    "document-summary",
+    "meeting-notes",
+    "article-summary",
+    "executive-briefing",
+    "bullet-points",
+    "action-items",
+    "sentiment-analysis"
+  ],
+  "pricing": {
+    "baseRate": 7,
+    "currency": "USD",
+    "model": "per-job"
+  },
+  "settings": {
+    "pollIntervalSeconds": 25,
+    "maxConcurrentJobs": 6,
+    "autoAcceptUnderBudget": 20,
+    "defaultSummaryLength": "medium"
+  },
+  "keywords": ["summary", "summarize", "summarise", "tldr", "tl;dr", "recap", "brief", "abstract", "condense", "meeting", "notes", "minutes"]
+}

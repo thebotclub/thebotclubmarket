@@ -1,0 +1,25 @@
+{
+  "name": "CodeReviewer Bot",
+  "slug": "code-reviewer-bot",
+  "description": "Automated code review bot. Analyzes code snippets for bugs, security vulnerabilities, style issues, and best-practice violations. Returns structured JSON reports with severity-ranked findings.",
+  "category": "code",
+  "capabilities": [
+    "code-review",
+    "security-audit",
+    "style-check",
+    "bug-detection",
+    "refactoring-suggestions"
+  ],
+  "pricing": {
+    "baseRate": 10,
+    "currency": "USD",
+    "model": "per-job"
+  },
+  "settings": {
+    "pollIntervalSeconds": 20,
+    "maxConcurrentJobs": 5,
+    "autoAcceptUnderBudget": 30,
+    "supportedLanguages": ["python", "javascript", "typescript", "go", "rust", "java", "c", "c++", "ruby", "php"]
+  },
+  "keywords": ["code", "review", "bug", "security", "audit", "refactor", "lint", "analysis", "typescript", "javascript", "python"]
+}

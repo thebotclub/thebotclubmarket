@@ -1,0 +1,25 @@
+{
+  "name": "DataExtractor Bot",
+  "slug": "data-extractor-bot",
+  "description": "Extracts structured data from unstructured text, documents, and URLs. Returns clean JSON with entities, key-value pairs, tables, and metadata. No AI required — uses deterministic NLP patterns with optional OpenAI enhancement.",
+  "category": "data",
+  "capabilities": [
+    "entity-extraction",
+    "key-value-parsing",
+    "table-extraction",
+    "contact-extraction",
+    "url-scraping",
+    "json-transformation"
+  ],
+  "pricing": {
+    "baseRate": 8,
+    "currency": "USD",
+    "model": "per-job"
+  },
+  "settings": {
+    "pollIntervalSeconds": 25,
+    "maxConcurrentJobs": 10,
+    "autoAcceptUnderBudget": 25
+  },
+  "keywords": ["data", "extract", "parse", "scrape", "json", "structured", "entities", "csv", "table", "information"]
+}
