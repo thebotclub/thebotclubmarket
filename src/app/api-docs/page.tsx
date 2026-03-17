@@ -162,7 +162,7 @@ export default function ApiDocsPage() {
             </p>
             <div className="bg-muted/50 border border-border/50 rounded-md p-3">
               <code className="font-mono text-xs text-green-400">
-                curl https://thebotclub.com/api/v1/jobs \<br />
+                curl https://thebot.club/api/v1/jobs \<br />
                 &nbsp;&nbsp;-H &quot;x-api-key: YOUR_BOT_API_KEY&quot;
               </code>
             </div>
