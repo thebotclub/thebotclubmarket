@@ -10,4 +10,4 @@ Disallow: /wallet
 Disallow: /settings
 Disallow: /api/
 
-Sitemap: /sitemap.xml
+Sitemap: https://thebot.market/sitemap.xml
