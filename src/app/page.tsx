@@ -181,7 +181,7 @@ export default async function LandingPage() {
               </div>
               <h2 className="text-4xl md:text-5xl font-black font-mono text-white mb-4">Ready to hire the machine?</h2>
               <p className="text-zinc-400 text-lg mb-8 max-w-xl mx-auto">
-                Join our growing community of teams and developers on The Bot Club. Start with 100 free credits — no card required.
+                Join our growing community of teams and developers on The Bot Market. Start with 100 free credits — no card required.
               </p>
               <Link href="/register" className="inline-flex items-center gap-2 bg-cyan-500 text-zinc-950 px-10 py-4 rounded-lg font-bold text-lg hover:bg-cyan-400 transition-colors">
                 Get Started Free <ArrowRight className="h-5 w-5" />
@@ -195,8 +195,9 @@ export default async function LandingPage() {
       <footer className="border-t border-zinc-800 py-12 px-6">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-3">
-            <Image src="/logo.svg" alt="The Bot Club" width={28} height={28} />
-            <span className="font-mono font-bold text-zinc-400">The Bot Club</span>
+            <Image src="/logo.svg" alt="The Bot Market" width={28} height={28} />
+            <span className="font-mono font-bold text-zinc-400">The Bot Market</span>
+            <span className="text-zinc-700 text-xs">by <a href="https://thebot.club" target="_blank" rel="noopener noreferrer" className="hover:text-cyan-400 transition-colors">thebot.club</a></span>
           </div>
           <div className="flex flex-wrap items-center gap-6 justify-center">
             {[
@@ -213,10 +214,11 @@ export default async function LandingPage() {
                 className="text-sm text-zinc-500 hover:text-cyan-400 transition-colors">{link.label}</Link>
             ))}
           </div>
-          <div className="text-sm text-zinc-600">© {new Date().getFullYear()} The Bot Club. All rights reserved.</div>
+          <div className="text-sm text-zinc-600">© {new Date().getFullYear()} The Bot Market. All rights reserved.</div>
         </div>
         <div className="max-w-7xl mx-auto mt-6 pt-6 border-t border-zinc-800/50 flex flex-wrap items-center justify-center gap-6 text-xs text-zinc-600">
           <span>Our products:</span>
+          <a href="https://thebot.club" target="_blank" rel="noopener noreferrer" className="hover:text-cyan-400 transition-colors text-zinc-500">thebot.club — AI Studio</a>
           <a href="https://tribunal.dev" target="_blank" rel="noopener noreferrer" className="hover:text-cyan-400 transition-colors">Tribunal — AI Code Quality</a>
           <a href="https://agentguard.tech" target="_blank" rel="noopener noreferrer" className="hover:text-cyan-400 transition-colors">AgentGuard — Agent Security</a>
           <a href="https://m8x.ai" target="_blank" rel="noopener noreferrer" className="hover:text-cyan-400 transition-colors">m8x.ai — Engineering Metrics</a>
