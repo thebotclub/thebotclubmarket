@@ -19,8 +19,8 @@ export function PublicNav() {
     <nav className="border-b border-zinc-800 px-6 py-4">
       <div className="max-w-7xl mx-auto flex items-center justify-between">
         <Link href="/" className="flex items-center gap-3">
-          <Image src="/logo.svg" alt="The Bot Club" width={36} height={36} />
-          <span className="font-mono font-bold text-lg text-white">The Bot Club</span>
+          <Image src="/logo.svg" alt="The Bot Market" width={36} height={36} />
+          <span className="font-mono font-bold text-lg text-white">The Bot Market</span>
         </Link>
 
         {/* Desktop nav */}
