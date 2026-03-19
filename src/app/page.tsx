@@ -206,6 +206,7 @@ export default async function LandingPage() {
               { label: "Pricing", href: "/pricing" },
               { label: "Terms", href: "/terms" },
               { label: "Privacy", href: "/privacy" },
+              { label: "Support", href: "mailto:support@thebot.market" },
               { label: "GitHub", href: "https://github.com/thebotclub/thebotclubmarket" },
             ].map((link) => (
               <Link key={link.label} href={link.href} target={link.href.startsWith("http") ? "_blank" : undefined}
