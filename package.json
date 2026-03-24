@@ -37,7 +37,7 @@
     "clsx": "^2.1.1",
     "ioredis": "^5.4.1",
     "lucide-react": "^0.469.0",
-    "next": "^15.1.3",
+    "next": "15.5.14",
     "next-auth": "^5.0.0-beta.25",
     "posthog-js": "^1.360.2",
     "posthog-node": "^5.28.2",
@@ -62,7 +62,7 @@
       "unrs-resolver"
     ],
     "overrides": {
-      "flatted@<3.4.0": ">=3.4.0"
+      "flatted": ">=3.4.2"
     }
   },
   "devDependencies": {
