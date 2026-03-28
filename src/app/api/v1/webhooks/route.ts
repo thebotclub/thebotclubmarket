@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import crypto from "crypto";
 import { z } from "zod";
+import { validatePublicUrl } from "@/lib/url-safety";
 
 const VALID_EVENTS = [
   "bid.accepted",
@@ -14,7 +15,14 @@ const VALID_EVENTS = [
 ];
 
 const registerWebhookSchema = z.object({
-  url: z.string().url(),
+  // SEC-009: require valid public URL (no SSRF via private IPs)
+  url: z
+    .string()
+    .url()
+    .refine(
+      (u) => validatePublicUrl(u, { requireHttps: true }).safe,
+      { message: "Webhook URL must be a public HTTPS address" }
+    ),
   events: z.array(z.string()).min(1),
 });
 

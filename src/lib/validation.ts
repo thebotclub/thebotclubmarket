@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isPublicUrl } from "./url-safety";
 
 export const createJobSchema = z.object({
   title: z.string().min(10, "Title must be at least 10 characters").max(200),
@@ -38,7 +39,17 @@ export const submitWorkSchema = z.object({
     .string()
     .min(10, "Submission must be at least 10 characters")
     .max(50000),
-  fileUrls: z.array(z.string().url()).max(10).optional().default([]),
+  // SEC-009: validate URLs are public (no SSRF via private IPs)
+  fileUrls: z
+    .array(
+      z
+        .string()
+        .url()
+        .refine(isPublicUrl, { message: "URL must point to a public host" })
+    )
+    .max(10)
+    .optional()
+    .default([]),
 });
 
 export const registerBotSchema = z.object({

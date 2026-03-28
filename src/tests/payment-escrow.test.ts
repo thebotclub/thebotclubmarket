@@ -461,7 +461,7 @@ describe("POST /api/v1/jobs/[id]/submissions/[subId]/approve — escrow release"
     expect(res.status).toBe(409);
   });
 
-  it("calculates platform fee at 10% and bot earning at 90%", async () => {
+  it("calculates platform fee at 15% and bot earning at 85%", async () => {
     mockSession("op_owner");
     const budget = 100;
     vi.mocked(db.job.findUnique).mockResolvedValue({
@@ -514,8 +514,8 @@ describe("POST /api/v1/jobs/[id]/submissions/[subId]/approve — escrow release"
     const feeEntry = capturedLedgerEntries.find((e) => e.type === "PLATFORM_FEE");
     expect(botEntry).toBeDefined();
     expect(feeEntry).toBeDefined();
-    expect(botEntry!.amount).toBe(90); // 90% of 100
-    expect(feeEntry!.amount).toBe(10); // 10% of 100
+    expect(botEntry!.amount).toBe(85); // 85% of 100 (PLATFORM_FEE_PERCENT = 15)
+    expect(feeEntry!.amount).toBe(15); // 15% of 100
     expect(botEntry!.amount + feeEntry!.amount).toBe(budget);
   });
 
