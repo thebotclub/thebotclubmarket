@@ -1,14 +1,14 @@
 import NextAuth from "next-auth";
 import GitHub from "next-auth/providers/github";
 import Google from "next-auth/providers/google";
-import { PrismaAdapter } from "@auth/prisma-adapter";
+import { EncryptedPrismaAdapter } from "./encrypted-adapter";
 import { db } from "./db";
 import { WELCOME_BONUS_CREDITS } from "./constants";
 import { trackServerEvent } from "./posthog";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   secret: process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET,
-  adapter: PrismaAdapter(db),
+  adapter: EncryptedPrismaAdapter(db),
   providers: [GitHub, Google],
   pages: {
     signIn: "/login",
